@@ -1,0 +1,6 @@
+__pycache__
+.venv
+db/__pycache__
+db/app.db
+endpoints/__pycache__
+models/__pycache__
