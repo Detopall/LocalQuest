@@ -35,8 +35,17 @@ def create_user(db, username: str, password: str, email: str):
     Returns:
         dict: Newly created user data
     """
-    hashed_password = hash_password(password)
     cursor = db.cursor()
+
+    # Check if email doesn't already exist
+    cursor.execute('''
+    SELECT * FROM users WHERE email = ?
+    ''', (email,))
+    existing_user = cursor.fetchone()
+    if existing_user:
+        raise ValueError("Email already exists")
+
+    hashed_password = hash_password(password)
 
     cursor.execute('''
     INSERT INTO users (username, password, email) VALUES (?, ?, ?)
@@ -48,3 +57,23 @@ def create_user(db, username: str, password: str, email: str):
     new_user = cursor.fetchone()
 
     return new_user
+
+def authenticate_user(db, auth_token: str):
+    """
+    Validate the authentication token.
+
+    Args:
+        db (SQLite connection): Database connection.
+        auth_token (str): Encrypted token from cookies.
+
+    Returns:
+        User: Authenticated user
+    """
+
+    cursor = db.cursor()
+    cursor.execute("SELECT username FROM cookies WHERE cookie = ?", (auth_token,))
+    result = cursor.fetchone()
+
+    if result:
+        return get_user_by_username(db, result["username"])
+    return None
