@@ -28,14 +28,14 @@ const AuthModal = forwardRef<AuthModalRef>((_, ref) => {
 		password: string;
 	}) => {
 		try {
-			const response = await fetch("http://localhost:8000/auth", {
+			await fetch("http://localhost:8000/auth", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(formData),
+				credentials: "include",
 			});
-			const result = await response.json();
-			console.log("Auth Response:", result);
 			setIsOpen(false);
+			window.location.href = "/home";
 		} catch (error) {
 			console.error("Auth Error:", error);
 		}

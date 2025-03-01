@@ -79,7 +79,7 @@ const FilterComponent = () => {
 	};
 
 	return (
-		<div className="max-w-[300px] w-full max-h-[90vh] overflow-y-auto p-6 border-r space-y-6 flex-shrink-0">
+		<div className="max-w-[300px] w-full max-h-[90vh] overflow-y-auto p-6 border-r space-y-6 flex-shrink-0 items-center">
 			<ListboxItemWrapper
 				childName="Cities"
 				children={cities}

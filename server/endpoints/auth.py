@@ -1,6 +1,6 @@
 import secrets
 from cryptography.fernet import Fernet
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from db import crud, pwd_hashing
 from db.database import get_db_connection
@@ -80,3 +80,22 @@ async def auth(user: dict, db: sqlite3.Connection = Depends(get_db_connection)):
 	)
 
 	return response
+
+@router.get("/me")
+async def auth(request: Request, db: sqlite3.Connection = Depends(get_db_connection)):
+	"""
+	Check if the cookie of the user is valid
+
+	Args:
+		db (SQLite connection): Database connection
+
+	Returns:
+		JSONResponse: Authentication response with the user data.
+	"""
+
+	user = crud.authenticate_user(db, request.cookies.get("auth_token"))
+
+	if user is None:
+		raise HTTPException(status_code=401, detail="Invalid authentication token")
+
+	return JSONResponse(content={"message": "Authentication successful", "username": user["username"], "email": user["email"]})
