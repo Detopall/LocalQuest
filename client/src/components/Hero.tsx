@@ -3,7 +3,7 @@ import { Button } from "@heroui/react";
 import LogoSvg from "@/components/LogoSvg";
 import AuthModal, { AuthModalRef } from "@/components/AuthModal";
 
-function Header() {
+function Hero() {
 	const modalRef = useRef<AuthModalRef>(null);
 	return (
 		<div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 text-center p-4">
@@ -29,4 +29,4 @@ function Header() {
 	);
 }
 
-export default Header;
+export default Hero;
