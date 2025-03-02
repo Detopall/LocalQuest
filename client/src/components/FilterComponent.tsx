@@ -9,7 +9,6 @@ import {
 	CardBody,
 } from "@heroui/react";
 
-const cities = ["New York", "Los Angeles", "Chicago", "Houston", "Miami"];
 const topics = ["Technology", "Health", "Finance", "Education", "Sports"];
 
 interface ListboxWrapperProps {
@@ -52,17 +51,11 @@ export const ListboxItemWrapper = ({
 );
 
 const FilterComponent = () => {
-	const [selectedCities, setSelectedCities] = useState<Set<string>>(new Set());
 	const [price, setPrice] = useState<[number, number]>([0, 100]);
 	const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set());
 
 	const applyFilters = () => {
 		const params = new URLSearchParams();
-		if (selectedCities.size) {
-			selectedCities.forEach((city) => {
-				params.append("city", city);
-			});
-		}
 		if (price) params.append("price", price.toString());
 		if (selectedTopics.size) {
 			selectedTopics.forEach((topic) => {
@@ -80,12 +73,6 @@ const FilterComponent = () => {
 
 	return (
 		<div className="max-w-[300px] w-full max-h-[90vh] overflow-y-auto p-6 border-r space-y-6 flex-shrink-0 items-center">
-			<ListboxItemWrapper
-				childName="Cities"
-				children={cities}
-				selectedChildren={selectedCities}
-				setChildren={setSelectedCities}
-			/>
 
 			<ListboxItemWrapper
 				childName="Topics"
@@ -161,7 +148,6 @@ const FilterComponent = () => {
 
 			<Button
 				onPress={() => {
-					setSelectedCities(new Set());
 					setPrice([0, 100]);
 					setSelectedTopics(new Set());
 				}}
