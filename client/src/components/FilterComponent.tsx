@@ -58,9 +58,7 @@ const FilterComponent = () => {
 		const params = new URLSearchParams();
 		if (price) params.append("price", price.toString());
 		if (selectedTopics.size) {
-			selectedTopics.forEach((topic) => {
-				params.append("topic", topic);
-			});
+			params.append("topics", selectedTopics.toString());
 		}
 
 		console.log(params.toString());

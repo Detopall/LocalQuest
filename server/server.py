@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from endpoints import auth_router, home_router
+from endpoints import auth_router, api_router
 from db.database import create_tables
 from db.database import get_db_connection
 from db.crud import authenticate_user
@@ -19,7 +19,7 @@ app.add_middleware(
     allow_credentials=True,
 )
 
-create_tables()
+create_tables("production")
 
 @app.middleware("http")
 async def authenticate_middleware(request: Request, call_next):
@@ -45,7 +45,7 @@ async def authenticate_middleware(request: Request, call_next):
     return await call_next(request)
 
 app.include_router(auth_router, prefix="/auth")
-app.include_router(home_router, prefix="/home")
+app.include_router(api_router, prefix="/api")
 
 if __name__ == "__main__":
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
