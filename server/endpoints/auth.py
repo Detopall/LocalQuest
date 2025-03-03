@@ -2,16 +2,16 @@ import secrets
 from cryptography.fernet import Fernet
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
-from db import crud, pwd_hashing
+from db.crud import user as user_crud
+from db import pwd_hashing
 from db.database import get_db_connection
 import sqlite3
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
 	SECRET_KEY: str
-
-	class Config:
-		env_file = ".env"
+	model_config = ConfigDict(env_file=".env")
 
 settings = Settings()
 
@@ -50,12 +50,12 @@ async def auth(user: dict, db: sqlite3.Connection = Depends(get_db_connection)):
 	if not user.get("username") or not user.get("password"):
 		raise HTTPException(status_code=400, detail="Username and Password are required")
 
-	db_user = crud.get_user_by_username(db, username=user["username"])
+	db_user = user_crud.get_user_by_username(db, username=user["username"])
 
 	if db_user is None:
 		if user.get("email") is None:
 			raise HTTPException(status_code=404, detail="User not found")
-		db_user = crud.create_user(db, username=user["username"], password=user["password"], email=user["email"])
+		db_user = user_crud.create_user(db, username=user["username"], password=user["password"], email=user["email"])
 
 	if not pwd_hashing.verify_password(user["password"], db_user["password"]):
 		raise HTTPException(status_code=401, detail="Incorrect password")
@@ -93,7 +93,7 @@ async def auth(request: Request, db: sqlite3.Connection = Depends(get_db_connect
 		JSONResponse: Authentication response with the user data.
 	"""
 
-	user = crud.authenticate_user(db, request.cookies.get("auth_token"))
+	user = user_crud.authenticate_user(db, request.cookies.get("auth_token"))
 
 	if user is None:
 		raise HTTPException(status_code=401, detail="Invalid authentication token")

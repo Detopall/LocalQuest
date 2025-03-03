@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from db.database import get_db_connection
 import sqlite3
-from db import crud
+from db.crud import topic as topic_crud
 
 router = APIRouter()
 
@@ -14,7 +14,7 @@ async def get_topics(db: sqlite3.Connection = Depends(get_db_connection)):
     """
 	Get all topics
     """
-    topics = crud.get_topics(db)
+    topics = topic_crud.get_topics(db)
     if not topics:
         return JSONResponse(content={"message": "Topics not found"}, status_code=404)
 

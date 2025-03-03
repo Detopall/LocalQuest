@@ -1,5 +1,6 @@
 import pytest
-from db.crud import get_topics, get_topic_by_names, get_topic_id_by_name, get_topic_by_names, DbError
+from db.crud.topic import get_topics, get_topic_by_names, get_topic_id_by_name, get_topic_by_names
+from db.errors import DbError
 
 def create_test_topics(db):
 	topics = ["Tech", "Science", "Art"]

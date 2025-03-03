@@ -1,5 +1,6 @@
 import pytest
-from db.crud import create_user, get_user_by_username, authenticate_user, DbError
+from db.crud.user import create_user, get_user_by_username, authenticate_user
+from db.errors import DbError
 
 def test_create_user(db):
 	user = create_user(db, "testuser", "password123", "test@example.com")

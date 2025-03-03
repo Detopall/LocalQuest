@@ -1,6 +1,6 @@
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from db.database import get_db_connection
-from db import crud
+from db.crud import user as user_crud
 import sqlite3
 
 def authenticate_user(username: str, cookies: str, db: sqlite3.Connection = Depends(get_db_connection)):
@@ -12,7 +12,7 @@ def authenticate_user(username: str, cookies: str, db: sqlite3.Connection = Depe
         raise HTTPException(status_code=401, detail="No authentication token found")
 
     try:
-        authenticated_user = crud.authenticate_user(db, cookies)
+        authenticated_user = user_crud.authenticate_user(db, cookies)
         if not authenticated_user:
             raise HTTPException(status_code=401, detail="Invalid authentication token")
     except Exception as e:

@@ -1,6 +1,5 @@
 import pytest
-from db.crud import (
-	create_user,
+from db.crud.quest import (
 	create_quest,
 	get_all_quests,
 	get_quest_by_id,
@@ -10,9 +9,11 @@ from db.crud import (
 	add_quest_candidate,
 	get_all_quests_by_topics,
 	get_user_applied_quests,
-	get_topic_id_by_name,
-	DbError
 )
+
+from db.crud.user import create_user
+from db.crud.topic import get_topic_id_by_name
+from db.errors import DbError
 
 def create_test_topics(db):
 	topics = ["Tech", "Science", "Art"]
