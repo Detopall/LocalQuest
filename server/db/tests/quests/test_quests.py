@@ -8,27 +8,29 @@ from db.crud import (
 	set_quest_status,
 	get_quest_candidates,
 	add_quest_candidate,
+	get_all_quests_by_topics,
 	get_user_applied_quests,
+	get_topic_id_by_name,
 	DbError
 )
 
 def create_test_topics(db):
-    topics = ["Tech", "Science", "Art"]
-    cursor = db.cursor()
+	topics = ["Tech", "Science", "Art"]
+	cursor = db.cursor()
 
-    for topic in topics:
-        cursor.execute('SELECT * FROM topics WHERE name = ?', (topic,))
-        if cursor.fetchone() is None:
-            cursor.execute('INSERT INTO topics (name) VALUES (?)', (topic,))
+	for topic in topics:
+		cursor.execute('SELECT * FROM topics WHERE name = ?', (topic,))
+		if cursor.fetchone() is None:
+			cursor.execute('INSERT INTO topics (name) VALUES (?)', (topic,))
 
-    db.commit()
+	db.commit()
 
 def create_test_user(db, username="testuser", password="password123", email="test@example.com"):
 	return create_user(db, username, password, email)
 
-def create_test_quest(db, user_id):
+def create_test_quest(db, user_id, topic="Tech"):
 	create_test_topics(db)
-	return create_quest(db, "Test Quest", "Test Description", ["Tech"], user_id)
+	return create_quest(db, title="Test Quest", description="Test Description", topic_names=[topic], user_id=user_id, longitude=0.0, latitude=0.0, deadline="2023-01-01 00:00:00")
 
 
 def test_create_quest(db):
@@ -79,6 +81,17 @@ def test_set_quest_status(db):
 	assert updated_quest["status"] == "closed"
 	assert updated_quest["completed_at"] is not None
 
+def test_get_all_quests_by_topics(db):
+	create_test_topics(db)
+	user = create_test_user(db)
+	quest = create_test_quest(db, user["id"])
+
+	topic_id = get_topic_id_by_name(db, "Tech")
+
+	quests = get_all_quests_by_topics(db, [topic_id])
+	assert len(quests) == 1
+	assert quests[0]["id"] == quest["id"]
+
 def test_get_quest_candidates(db):
 	user = create_test_user(db)
 
@@ -128,6 +141,10 @@ def test_get_user_applied_quests(db):
 	assert applied_quests_user2[0]["user_id"] == user2["id"]
 
 
+"""
+INVALID TESTS
+"""
+
 def test_create_quest_without_user(db):
 	try:
 		create_test_quest(db, 999)  # Invalid user ID
@@ -174,3 +191,15 @@ def test_add_quest_candidate_for_invalid_user(db):
 	except ValueError as e:
 		assert e.args[0] == DbError.USER_NOT_FOUND_ERROR.value
 
+def test_get_all_quests_by_invalid_topics(db):
+	create_test_topics(db)
+	user = create_test_user(db)
+	_ = create_test_quest(db, user["id"])
+
+	try:
+		topic_id = get_topic_id_by_name(db, "Invalid Topic")
+		quests = get_all_quests_by_topics(db, [topic_id]) # not being run because of the topic id not found error
+		assert len(quests) == 0
+		pytest.fail("Expected error when getting quests by invalid topics")
+	except ValueError as e:
+		assert e.args[0] == DbError.TOPIC_NOT_FOUND_ERROR.value

@@ -2,7 +2,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from endpoints import auth_router, api_router
+from endpoints import auth_router
+from endpoints.api import api_router as filter_api_router
 from db.database import create_tables
 from db.database import get_db_connection
 from db.crud import authenticate_user
@@ -23,20 +24,17 @@ create_tables("production")
 
 @app.middleware("http")
 async def authenticate_middleware(request: Request, call_next):
-    print(request.cookies)
 
     if request.url.path.startswith("/auth"):
         return await call_next(request)
 
     auth_token = request.cookies.get("auth_token")
-    print(auth_token)
     if not auth_token:
         return JSONResponse({"error": "No authentication token found"}, status_code=401)
 
     try:
         with get_db_connection() as db:
             username = authenticate_user(db, auth_token)
-            print(username)
             if not username:
                 return JSONResponse({"error": "Invalid authentication token"}, status_code=401)
     except Exception as e:
@@ -45,7 +43,7 @@ async def authenticate_middleware(request: Request, call_next):
     return await call_next(request)
 
 app.include_router(auth_router, prefix="/auth")
-app.include_router(api_router, prefix="/api")
+app.include_router(filter_api_router, prefix="/api")
 
 if __name__ == "__main__":
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

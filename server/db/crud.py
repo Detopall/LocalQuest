@@ -157,7 +157,29 @@ def get_topic_by_names(db, names: list[str]) -> list[dict]:
 
     return result
 
-def create_quest(db, title: str, description: str, topic_name: list[str], user_id: int) -> dict:
+def get_topic_id_by_name(db, name: str) -> int:
+    """
+    Get the topic ID by name.
+
+    Args:
+        db (sqlite3.Connection): SQLite database connection.
+        name (str): Topic name.
+
+    Returns:
+        int: Topic ID.
+    """
+
+    cursor = db.cursor()
+    cursor.execute("SELECT id FROM topics WHERE name = ?", (name,))
+
+    result = cursor.fetchone()
+
+    if not result:
+        raise ValueError(DbError.TOPIC_NOT_FOUND_ERROR.value)
+
+    return result["id"]
+
+def create_quest(db, title: str, description: str, topic_names: list[str], user_id: int, longitude: float, latitude: float, deadline: str) -> dict:
     """
     Create a new quest in the database.
 
@@ -165,8 +187,11 @@ def create_quest(db, title: str, description: str, topic_name: list[str], user_i
         db (sqlite3.Connection): SQLite database connection.
         title (str): Quest title.
         description (str): Quest description.
-        topic_name (list[str]): Topic name.
+        topic_names (list[str]): Topic names.
         user_id (int): User ID.
+        longitude (float): Quest longitude.
+        latitude (float): Quest latitude.
+        deadline (str): Quest deadline.
 
     Returns:
         dict: Newly created quest data.
@@ -177,20 +202,20 @@ def create_quest(db, title: str, description: str, topic_name: list[str], user_i
     if not get_user_by_id(db, user_id):
         raise ValueError(DbError.USER_NOT_FOUND_ERROR.value)
 
-    if not get_topic_by_names(db, topic_name):
+    if not topic_names:
         raise ValueError(DbError.TOPIC_NOT_FOUND_ERROR.value)
 
-    topic_id = get_topic_by_names(db, topic_name)[0]["id"]
+    topic_ids = [get_topic_id_by_name(db, name) for name in topic_names]
 
     cursor.execute('''
-    INSERT INTO quests (title, description, topic_id, user_id) VALUES (?, ?, ?, ?)
-    ''', (title, description, topic_id, user_id))
+    INSERT INTO quests (title, description, topic_id, user_id, longitude, latitude, deadline) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (title, description, topic_ids[0], user_id, longitude, latitude, deadline))
 
     db.commit()
 
     cursor.execute('''
-    SELECT * FROM quests WHERE title = ?
-    ''', (title,))
+                   SELECT * FROM quests WHERE id = (SELECT MAX(id) FROM quests)
+                   ''')
 
     return cursor.fetchone()
 
@@ -200,13 +225,16 @@ def get_all_quests_by_topics(db, topic_ids: list[int]) -> list:
 
     Args:
         db (sqlite3.Connection): SQLite database connection.
-        topic_id (list[int]): List of Topic IDs.
+        topic_ids (list[int]): List of Topic IDs.
 
     Returns:
         list: List of quests.
     """
 
     cursor = db.cursor()
+
+    if not topic_ids:
+        raise ValueError(DbError.TOPIC_NOT_FOUND_ERROR.value)
 
     cursor.execute('''
     SELECT * FROM quests WHERE topic_id IN ({})
@@ -228,6 +256,24 @@ def get_all_quests(db) -> list:
     cursor = db.cursor()
     cursor.execute("SELECT * FROM quests")
     return cursor.fetchall()
+
+def get_all_quests_by_price_range(db, min_price: int, max_price: int) -> list:
+    """
+    Get all quests by price range.
+
+    Args:
+        db (sqlite3.Connection): SQLite database connection.
+        min_price (int): Minimum price.
+        max_price (int): Maximum price.
+
+    Returns:
+        list: List of quests.
+    """
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM quests WHERE price BETWEEN ? AND ?", (min_price, max_price))
+    return cursor.fetchall()
+
 
 def get_quest_by_id(db, id: int) -> dict:
     """
