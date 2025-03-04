@@ -2,16 +2,15 @@ import secrets
 from cryptography.fernet import Fernet
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
-from db.crud import user as user_crud
 from db import pwd_hashing
 from db.database import get_db_connection
-import sqlite3
+from pymongo import MongoClient
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
 	SECRET_KEY: str
-	model_config = ConfigDict(env_file=".env")
+	model_config = ConfigDict(env_file=".env", extra="allow")
 
 settings = Settings()
 
@@ -23,7 +22,6 @@ def generate_encrypted_cookie(username: str) -> str:
 	"""
 	Generate a secure encrypted authentication token.
 	"""
-
 	token = f"{username}:{secrets.token_hex(32)}"
 	encrypted_token = cipher.encrypt(token.encode()).decode()
 	return encrypted_token
@@ -32,17 +30,16 @@ def decrypt_cookie(encrypted_cookie: str) -> str:
 	"""
 	Decrypt the stored cookie value.
 	"""
-
 	return cipher.decrypt(encrypted_cookie.encode()).decode()
 
 @router.post("/")
-async def auth(user: dict, db: sqlite3.Connection = Depends(get_db_connection)):
+async def auth(user: dict, db: MongoClient = Depends(get_db_connection)):
 	"""
 	Endpoint for user authentication.
 
 	Args:
 		user (dict): User login data
-		db (SQLite connection): Database connection
+		db (MongoDB connection): Database connection
 
 	Returns:
 		JSONResponse: Authentication response with cookie.
@@ -50,22 +47,34 @@ async def auth(user: dict, db: sqlite3.Connection = Depends(get_db_connection)):
 	if not user.get("username") or not user.get("password"):
 		raise HTTPException(status_code=400, detail="Username and Password are required")
 
-	db_user = user_crud.get_user_by_username(db, username=user["username"])
+	users_collection = db["users"]
+	cookies_collection = db["cookies"]
+
+	db_user = users_collection.find_one({"username": user["username"]})
 
 	if db_user is None:
 		if user.get("email") is None:
 			raise HTTPException(status_code=404, detail="User not found")
-		db_user = user_crud.create_user(db, username=user["username"], password=user["password"], email=user["email"])
+		hashed_pw = pwd_hashing.hash_password(user["password"])
+		users_collection.insert_one({
+			"username": user["username"],
+			"password": hashed_pw,
+			"email": user["email"],
+			"created_quests": [],
+			"applied_quests": []
+		})
+		db_user = users_collection.find_one({"username": user["username"]})
 
 	if not pwd_hashing.verify_password(user["password"], db_user["password"]):
 		raise HTTPException(status_code=401, detail="Incorrect password")
 
 	encrypted_token = generate_encrypted_cookie(db_user["username"])
 
-	cursor = db.cursor()
-	cursor.execute("INSERT INTO cookies (username, cookie) VALUES (?, ?) ON CONFLICT(username) DO UPDATE SET cookie=?",
-				(db_user["username"], encrypted_token, encrypted_token))
-	db.commit()
+	cookies_collection.update_one(
+		{"username": db_user["username"]},
+		{"$set": {"cookie": encrypted_token}},
+		upsert=True
+	)
 
 	response = JSONResponse(content={"message": "Authentication successful", "username": db_user["username"], "email": db_user["email"]})
 	response.set_cookie(
@@ -74,7 +83,7 @@ async def auth(user: dict, db: sqlite3.Connection = Depends(get_db_connection)):
 		domain="localhost",
 		path="/",
 		expires=3600,
-		secure=True,
+		secure=False,
 		httponly=True,
 		samesite="Lax"
 	)
@@ -82,20 +91,37 @@ async def auth(user: dict, db: sqlite3.Connection = Depends(get_db_connection)):
 	return response
 
 @router.get("/me")
-async def auth(request: Request, db: sqlite3.Connection = Depends(get_db_connection)):
+async def auth(request: Request, db: MongoClient = Depends(get_db_connection)):
 	"""
 	Check if the cookie of the user is valid
 
 	Args:
-		db (SQLite connection): Database connection
+		db (MongoDB connection): Database connection
 
 	Returns:
 		JSONResponse: Authentication response with the user data.
 	"""
+	cookies_collection = db["cookies"]
+	users_collection = db["users"]
 
-	user = user_crud.authenticate_user(db, request.cookies.get("auth_token"))
+	auth_token = request.cookies.get("auth_token")
+	print(auth_token)
+	if not auth_token:
+		raise HTTPException(status_code=401, detail="No authentication token found")
 
-	if user is None:
+	try:
+		decrypted_token = decrypt_cookie(auth_token)
+		username = decrypted_token.split(":")[0]
+	except:
 		raise HTTPException(status_code=401, detail="Invalid authentication token")
 
-	return JSONResponse(content={"message": "Authentication successful", "username": user["username"], "email": user["email"]})
+	db_cookie = cookies_collection.find_one({"username": username, "cookie": auth_token})
+	print(db_cookie)
+	if not db_cookie:
+		raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
+
+	user = users_collection.find_one({"username": username}, {"password": 0})
+	if not user:
+		raise HTTPException(status_code=401, detail="User not found")
+
+	return JSONResponse(content={"message": "Authentication successful", "username": user["username"], "email": user.get("email")})

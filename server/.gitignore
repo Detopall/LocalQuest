@@ -3,4 +3,3 @@ __pycache__
 db/app.db
 .env
 .pytest_cache
-file:memory:?cache=shared
