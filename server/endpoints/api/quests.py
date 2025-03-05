@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Body
+from fastapi import APIRouter, Depends, HTTPException, Request, Body, Query
 from fastapi.responses import JSONResponse
 from db.database import get_db_connection
 from pymongo import MongoClient
 from db.crud import crud_quests
 from db.crud.crud_quests import Quest
-from logging import getLogger
+from typing import List
 
-logger = getLogger(__name__)
 
 router = APIRouter()
 
@@ -43,6 +42,14 @@ async def create_quest(
     if not quest:
         raise HTTPException(status_code=400, detail="Failed to create quest")
     return JSONResponse(status_code=201, content={"quest": quest})
+
+
+@router.get("/filter")
+async def filter_quests(topics: List[str] = Query(...), db: MongoClient = Depends(get_db_connection)):
+    filtered_quests = crud_quests.filter_quests_db(db=db, topics=topics)
+    if not filtered_quests:
+        raise HTTPException(status_code=404, detail="No quests found")
+    return JSONResponse(status_code=200, content={"quests": filtered_quests})
 
 
 @router.get("/{quest_id}")
