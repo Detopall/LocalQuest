@@ -3,7 +3,7 @@ from db.connect_db import uri
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-def get_db_connection(db_type: Literal["production", "test"] = "production"):
+def get_db_connection():
     client = MongoClient(uri, server_api=ServerApi('1'))
     db = client["local_quest"]
     return db
@@ -110,8 +110,8 @@ def create_quest_candidates_table(db):
     quest_candidates.create_index("quest_id")
     quest_candidates.create_index("user_id")
 
-def create_tables(db_type: Literal["production", "test"] = "production"):
-    db = get_db_connection(db_type)
+def create_tables():
+    db = get_db_connection()
 
     # Dictionary of collections and their corresponding creation functions
     tables: dict[str, Callable] = {
