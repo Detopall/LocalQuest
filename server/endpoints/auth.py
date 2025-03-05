@@ -7,6 +7,7 @@ from db.database import get_db_connection
 from pymongo import MongoClient
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
+from datetime import datetime, timedelta
 
 class Settings(BaseSettings):
 	SECRET_KEY: str
@@ -32,7 +33,7 @@ def decrypt_cookie(encrypted_cookie: str) -> str:
 	"""
 	return cipher.decrypt(encrypted_cookie.encode()).decode()
 
-@router.post("/")
+@router.post("")
 async def auth(user: dict, db: MongoClient = Depends(get_db_connection)):
 	"""
 	Endpoint for user authentication.
@@ -71,8 +72,12 @@ async def auth(user: dict, db: MongoClient = Depends(get_db_connection)):
 	encrypted_token = generate_encrypted_cookie(db_user["username"])
 
 	cookies_collection.update_one(
-		{"username": db_user["username"]},
-		{"$set": {"cookie": encrypted_token}},
+	{"username": db_user["username"]},
+	{"$set": {
+		"cookie": encrypted_token,
+		"created_at": datetime.now(),
+		"expiration_at": datetime.now() + timedelta(days=7)
+		}},
 		upsert=True
 	)
 
