@@ -9,6 +9,8 @@ def serialize_objectid(obj):
 		return str(obj)
 	elif isinstance(obj, dict):
 		return {key: serialize_objectid(value) for key, value in obj.items()}
+	elif isinstance(obj, tuple):
+		return tuple(serialize_objectid(item) for item in obj)
 	elif isinstance(obj, list):
 		return [serialize_objectid(item) for item in obj]
 	elif isinstance(obj, datetime):

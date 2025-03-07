@@ -1,4 +1,4 @@
-from typing import Literal, Callable
+from typing import Callable
 from db.connect_db import uri
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -74,11 +74,12 @@ def create_quest_table(db):
     db.create_collection("quests", validator={
         "$jsonSchema": {
             "bsonType": "object",
-            "required": ["title", "description", "topics", "created_by", "longitude", "latitude", "deadline", "applicants", "status"],
+            "required": ["title", "description", "topics", "created_by", "longitude", "price", "latitude", "deadline", "applicants", "status"],
             "properties": {
                 "title": {"bsonType": "string", "minLength": 5},
                 "description": {"bsonType": "string", "minLength": 10},
                 "topics": {"bsonType": "array", "items": {"bsonType": "objectId"}},
+                "price": {"bsonType": "double", "minimum": 0},
                 "created_by": {"bsonType": "objectId"},
                 "longitude": {"bsonType": "double"},
                 "latitude": {"bsonType": "double"},

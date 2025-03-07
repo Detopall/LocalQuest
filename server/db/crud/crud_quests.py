@@ -13,6 +13,7 @@ class Quest(BaseModel):
 	topics: List[str]
 	longitude: float
 	latitude: float
+	price: float
 	deadline: datetime
 
 class Topic(BaseModel):
@@ -83,6 +84,7 @@ def create_quest_db(db, user_quest: Quest, request: Request):
 		"longitude": user_quest.longitude,
 		"latitude": user_quest.latitude,
 		"deadline": user_quest.deadline,
+		"price": user_quest.price,
 		"applicants": [],
 		"status": "open"
 	}
@@ -196,43 +198,48 @@ def delete_quest_by_id_db(db, quest_id: str) -> bool:
 
 	return True
 
-def filter_quests_db(db, topics: List[str]):
+def filter_quests_db(db, topics: List[str] = None, prices: List[float] = None):
 	"""
-	Get quests that match the given topics.
+	Get quests that match the given topics and/or price range.
 
 	Args:
 		db: Database connection.
-		topics (List[str]): List of topic names.
+		topics (List[str], optional): List of topic names. Defaults to None.
+		prices (List[float], optional): Price range. Defaults to None.
 
 	Returns:
 		List[dict]: List of filtered quests.
+
+	Raises:
+		ValueError: If neither topics nor prices are provided.
 	"""
+	if not topics and not prices:
+		raise ValueError("Either topics or prices must be provided")
+
 	quests_collection = db["quests"]
 	topics_collection = db["topics"]
 
-	# Convert topic names to topic ObjectIDs
-	query_topic_ids = [
-		topic["_id"] for topic in topics_collection.find({"name": {"$in": topics}})
-	]
+	query = {}
 
-	# If no topics match, return an empty list
-	if not query_topic_ids:
-		return []
+	if topics:
+		query_topic_ids = [
+			topic["_id"] for topic in topics_collection.find({"name": {"$in": topics}})
+		]
+		query["topics"] = {"$in": query_topic_ids}
 
-	# Use a simple $in query instead of $setIntersection
-	quests = list(quests_collection.find({"topics": {"$in": query_topic_ids}}))
+	if prices:
+		if len(prices) != 2:
+			raise ValueError("Prices must be a list of two values")
+		query["price"] = {"$gte": prices[0], "$lte": prices[1]}
 
-	# Manual sorting by topic match count
-	for quest in quests:
-		# Calculate how many of the queried topics match this quest
-		quest["topic_match_count"] = sum(1 for topic_id in quest["topics"] if topic_id in query_topic_ids)
+	quests = list(quests_collection.find(query))
 
-	# Sort by match count (highest first)
-	quests.sort(key=lambda x: x["topic_match_count"], reverse=True)
-
-	# Remove the temporary topic_match_count field
-	for quest in quests:
-		quest.pop("topic_match_count", None)
+	if topics:
+		for quest in quests:
+			quest["topic_match_count"] = sum(1 for topic_id in quest["topics"] if topic_id in query_topic_ids)
+		quests.sort(key=lambda x: x["topic_match_count"], reverse=True)
+		for quest in quests:
+			quest.pop("topic_match_count", None)
 
 	return [serialize_objectid(quest) for quest in quests]
 

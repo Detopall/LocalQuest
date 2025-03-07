@@ -16,7 +16,7 @@ def test_get_empty_quests(client, test_db):
 	"""
 	Test get empty quests, with an empty database
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 	response = client.get("/api/quests")
 
 	assert response.status_code == 200
@@ -28,7 +28,7 @@ def test_get_all_quests(client, test_db):
 	"""
 	Test get all quests with data in database
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 
 	# Create topics first
 	topic1_id = ObjectId()
@@ -80,6 +80,7 @@ def test_create_quest_no_auth(client):
 		"topics": ["test"],
 		"longitude": 10.0,
 		"latitude": 20.0,
+		"price": 10.0,
 		"deadline": (datetime.now() + timedelta(days=30)).isoformat()
 	}
 
@@ -91,7 +92,7 @@ def test_create_quest(client, test_db):
 	"""
 	Test create quest with valid data
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 
 	# Create a topic first
 	test_db["topics"].insert_one({"name": "test"})
@@ -102,6 +103,7 @@ def test_create_quest(client, test_db):
 		"topics": ["test"],
 		"longitude": 10.0,
 		"latitude": 20.0,
+		"price": 10.0,
 		"deadline": (datetime.now() + timedelta(days=30)).isoformat()
 	}
 
@@ -119,6 +121,7 @@ def test_create_quest(client, test_db):
 	assert "deadline" in db_quest
 	assert db_quest["status"] == "open"
 	assert isinstance(db_quest["topics"], list)
+	assert db_quest["price"] == 10.0
 	assert len(db_quest["topics"]) == 1
 	assert isinstance(db_quest["topics"][0], ObjectId)
 
@@ -127,7 +130,7 @@ def test_create_quest_invalid_topic(client, test_db):
 	"""
 	Test create quest with non-existent topic
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 
 	quest_data = {
 		"title": "New Quest",
@@ -135,6 +138,7 @@ def test_create_quest_invalid_topic(client, test_db):
 		"topics": ["non_existent_topic"],
 		"longitude": 10.0,
 		"latitude": 20.0,
+		"price": 10.0,
 		"deadline": (datetime.now() + timedelta(days=30)).isoformat()
 	}
 
@@ -147,7 +151,7 @@ def test_create_quest_invalid_data(client, test_db):
 	"""
 	Test create quest with invalid data
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 
 	# Missing required fields
 	quest_data = {
@@ -170,7 +174,7 @@ def test_get_quest_by_id_not_found(client, test_db):
 	"""
 	Test get quest by ID with non-existent ID
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 	non_existent_id = str(ObjectId())
 
 	response = client.get(f"/api/quests/{non_existent_id}")
@@ -182,7 +186,7 @@ def test_get_quest_by_id(client, test_db):
 	"""
 	Test get quest by ID with valid ID
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 
 	# Create a topic first
 	topic_id = ObjectId()
@@ -199,6 +203,7 @@ def test_get_quest_by_id(client, test_db):
 		"longitude": 10.0,
 		"latitude": 20.0,
 		"deadline": deadline,
+		"price": 10.0,
 		"applicants": [],
 		"status": "open"
 	})
@@ -221,6 +226,7 @@ def test_update_quest_no_auth(client):
 		"topics": ["updated"],
 		"longitude": 15.0,
 		"latitude": 25.0,
+		"price": 15.0,
 		"deadline": (datetime.now() + timedelta(days=30)).isoformat()
 	}
 
@@ -232,7 +238,7 @@ def test_update_quest_not_found(client, test_db):
 	"""
 	Test update quest with non-existent ID
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 	non_existent_id = str(ObjectId())
 
 	update_data = {
@@ -241,6 +247,7 @@ def test_update_quest_not_found(client, test_db):
 		"topics": ["updated"],
 		"longitude": 15.0,
 		"latitude": 25.0,
+		"price": 15.0,
 		"deadline": (datetime.now() + timedelta(days=30)).isoformat()
 	}
 
@@ -253,7 +260,7 @@ def test_update_quest_not_creator(client, test_db):
 	"""
 	Test update quest when user is not the creator
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 	user_data = client.get("/api/me").json()
 	user_id = ObjectId(user_data["user"]["_id"])
 
@@ -275,6 +282,7 @@ def test_update_quest_not_creator(client, test_db):
 		"longitude": 10.0,
 		"latitude": 20.0,
 		"deadline": deadline,
+		"price": 10.0,
 		"created_by": another_user_id,
 		"applicants": [],
 		"status": "open"
@@ -286,6 +294,7 @@ def test_update_quest_not_creator(client, test_db):
 		"topics": ["test"],
 		"longitude": 15.0,
 		"latitude": 25.0,
+		"price": 15.0,
 		"deadline": (datetime.now() + timedelta(days=30)).isoformat()
 	}
 
@@ -301,7 +310,7 @@ def test_update_quest(client, test_db):
 	"""
 	Test update quest with valid ID and data
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 	user_data = client.get("/api/me")
 
 	user_id = ObjectId(user_data.json()["user"]["_id"])
@@ -326,6 +335,7 @@ def test_update_quest(client, test_db):
 		"latitude": 20.0,
 		"deadline": deadline,
 		"created_by": user_id,
+		"price": 10.0,
 		"applicants": [],
 		"status": "open"
 	})
@@ -337,6 +347,7 @@ def test_update_quest(client, test_db):
 		"topics": ["updated"],
 		"longitude": 15.0,
 		"latitude": 25.0,
+		"price": 15.0,
 		"deadline": new_deadline
 	}
 
@@ -350,6 +361,7 @@ def test_update_quest(client, test_db):
 	assert db_quest["title"] == "Updated Quest"
 	assert db_quest["description"] == "Updated description"
 	assert db_quest["longitude"] == 15.0
+	assert db_quest["price"] == 15.0
 	assert db_quest["latitude"] == 25.0
 	assert len(db_quest["topics"]) == 1
 	assert db_quest["topics"][0] == new_topic_id
@@ -368,7 +380,7 @@ def test_delete_quest_not_found(client, test_db):
 	"""
 	Test delete quest with non-existent ID
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 	non_existent_id = str(ObjectId())
 
 	response = client.delete(f"/api/quests/{non_existent_id}")
@@ -380,7 +392,7 @@ def test_delete_quest(client, test_db):
 	"""
 	Test delete quest with valid ID
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 
 	# Create a topic
 	topic_id = ObjectId()
@@ -425,7 +437,7 @@ def test_filter_quests_no_results(client, test_db):
 	"""
 	Test filter quests with no matching results
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 
 	# Create topics
 	topic1_id = ObjectId()
@@ -445,6 +457,7 @@ def test_filter_quests_no_results(client, test_db):
 			"longitude": 10.0,
 			"latitude": 20.0,
 			"deadline": deadline,
+			"price": 10.0,
 			"applicants": [],
 			"status": "open"
 		},
@@ -454,6 +467,7 @@ def test_filter_quests_no_results(client, test_db):
 			"topics": [topic2_id],
 			"longitude": 15.0,
 			"latitude": 25.0,
+			"price": 15.0,
 			"deadline": deadline,
 			"applicants": [],
 			"status": "open"
@@ -470,7 +484,7 @@ def test_filter_quests(client, test_db):
 	"""
 	Test filter quests with matching results
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 
 	# Create topics
 	topic1_id = ObjectId()
@@ -493,6 +507,7 @@ def test_filter_quests(client, test_db):
 			"topics": [topic1_id, common_id],
 			"longitude": 10.0,
 			"latitude": 20.0,
+			"price": 10.0,
 			"deadline": deadline,
 			"applicants": [],
 			"status": "open"
@@ -502,6 +517,7 @@ def test_filter_quests(client, test_db):
 			"description": "Test description 2",
 			"topics": [topic2_id, common_id],
 			"longitude": 15.0,
+			"price": 15.0,
 			"latitude": 25.0,
 			"deadline": deadline,
 			"applicants": [],
@@ -512,6 +528,7 @@ def test_filter_quests(client, test_db):
 			"description": "Test description 3",
 			"topics": [topic3_id],
 			"longitude": 30.0,
+			"price": 30.0,
 			"latitude": 40.0,
 			"deadline": deadline,
 			"applicants": [],
@@ -531,6 +548,16 @@ def test_filter_quests(client, test_db):
 	assert response.status_code == 200
 	assert len(response.json()["quests"]) == 2
 
+	# Filter by price range
+	response = client.get("/api/quests/filter?prices=10.0&prices=15.0")
+	assert response.status_code == 200
+	assert len(response.json()["quests"]) == 2
+
+	# Filter by price and topics
+	response = client.get("/api/quests/filter?topics=topic1&topics=common&prices=10.0&prices=15.0")
+	assert response.status_code == 200
+	assert len(response.json()["quests"]) == 2
+
 
 def test_apply_to_quest_no_auth(client):
 	"""
@@ -545,7 +572,7 @@ def test_apply_to_quest_not_found(client, test_db):
 	"""
 	Test apply to quest with non-existent ID
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 	non_existent_id = str(ObjectId())
 
 	response = client.post(f"/api/quests/{non_existent_id}/apply")
@@ -557,7 +584,7 @@ def test_apply_to_quest_creator(client, test_db):
 	"""
 	Test apply to quest when user is the creator
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 	user_data = client.get("/api/me").json()
 	user_id = ObjectId(user_data["user"]["_id"])
 
@@ -592,7 +619,7 @@ def test_apply_to_quest(client, test_db):
 	"""
 	Test apply to quest with valid ID
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 	user_data = client.get("/api/me").json()
 	user_id = ObjectId(user_data["user"]["_id"])
 
@@ -633,7 +660,7 @@ def test_apply_to_quest_already_applied(client, test_db):
 	"""
 	Test apply to quest when user has already applied
 	"""
-	cookies = generate_cookies_from_user(client, test_db)
+	generate_cookies_from_user(client, test_db)
 	user_data = client.get("/api/me").json()
 	user_id = ObjectId(user_data["user"]["_id"])
 

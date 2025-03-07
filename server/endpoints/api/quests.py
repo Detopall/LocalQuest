@@ -45,8 +45,14 @@ async def create_quest(
 
 
 @router.get("/filter")
-async def filter_quests(topics: List[str] = Query(...), db: MongoClient = Depends(get_db_connection)):
-    filtered_quests = crud_quests.filter_quests_db(db=db, topics=topics)
+async def filter_quests(topics: List[str] = Query(None, alias="topics"), prices: List[float] = Query(None, alias="prices"), db: MongoClient = Depends(get_db_connection)):
+    if not topics and not prices:
+        raise HTTPException(status_code=400, detail="Either topics or prices must be provided")
+
+    if prices and len(prices) != 2:
+        raise HTTPException(status_code=400, detail="Prices must be a list of two values")
+
+    filtered_quests = crud_quests.filter_quests_db(db=db, topics=topics, prices=prices)
     if not filtered_quests:
         raise HTTPException(status_code=404, detail="No quests found")
     return JSONResponse(status_code=200, content={"quests": filtered_quests})
