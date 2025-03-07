@@ -1,6 +1,6 @@
 import FilterComponent from "@/components/FilterComponent";
 import MapComponent from "@/components/MapComponent";
-import { Avatar, Button, Link } from "@heroui/react";
+import { Avatar, Button } from "@heroui/react";
 
 interface User {
 	username: string;
