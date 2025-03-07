@@ -15,4 +15,5 @@ def test_db():
 @pytest.fixture(scope="function")
 def client(test_db):
     app.dependency_overrides[get_db_connection] = lambda: test_db
+    app.state.db = test_db
     return TestClient(app)

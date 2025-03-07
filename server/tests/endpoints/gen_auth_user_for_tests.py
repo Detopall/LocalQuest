@@ -7,6 +7,16 @@ logger = logging.getLogger(__name__)
 def generate_cookies_from_user(client, test_db, username="authuser", password="securepassword", email="auth@gmail.com"):
     """
     A helper function to generate cookies from a user.
+
+    Args:
+        client (TestClient): FastAPI test client
+        test_db (MongoDB connection): Database connection
+        username (str, optional): Username. Defaults to "authuser".
+        password (str, optional): Password. Defaults to "securepassword".
+        email (str, optional): Email. Defaults to "auth@gmail.com".
+
+    Returns:
+        None
     """
     test_db["users"].insert_one({
         "username": username,
@@ -29,4 +39,3 @@ def generate_cookies_from_user(client, test_db, username="authuser", password="s
     assert cookie, f"No cookie found for user {username}"
 
     client.cookies["auth_token"] = auth_token
-    return auth_token

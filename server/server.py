@@ -1,12 +1,14 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from db.database import get_db_connection
 import uvicorn
 from endpoints.auth import router as auth_router
 from endpoints.api import router as api_router
-from db.database import create_tables, get_db_connection
+from db.database import create_tables
 from contextlib import asynccontextmanager
 import logging
+import time
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -15,9 +17,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     create_tables()
     yield
-    client = get_db_connection()
-    client.client.close()
-    logger.info("MongoDB client closed.")
+    logger.info("Shutting down application.")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -30,7 +30,7 @@ app.add_middleware(
     allow_credentials=True,
 )
 
-def authenticate_user(db, auth_token:str) -> str | None:
+def authenticate_user(db, auth_token: str) -> str | None:
     """
     Authenticate a user based on the provided authentication token.
 
@@ -42,23 +42,27 @@ def authenticate_user(db, auth_token:str) -> str | None:
         str | None: Username if authenticated, None otherwise
     """
     cookies_collection = db["cookies"]
+    logger.info(f"Authenticating user with token: {auth_token}")
+    time.sleep(0.1)
     db_cookie = cookies_collection.find_one({"cookie": auth_token})
-    if not db_cookie:
-        return None
-    return db_cookie["username"]
+    logger.info(f"Found cookie: {db_cookie}")
+    return db_cookie["username"] if db_cookie else None
 
 @app.middleware("http")
 async def authenticate_middleware(request: Request, call_next):
+    """
+    Middleware to authenticate users based on an auth token in cookies.
+    """
     if request.url.path.startswith("/auth"):
         return await call_next(request)
 
     auth_token = request.cookies.get("auth_token")
-
     if not auth_token:
         logger.error("No authentication token found")
         return JSONResponse({"error": "No authentication token found"}, status_code=401)
+
     try:
-        db = get_db_connection()
+        db = request.app.state.db if hasattr(request.app.state, "db") else get_db_connection()
         username = authenticate_user(db, auth_token)
         logger.info(f"Authenticated user: {username}")
         if not username:
@@ -70,10 +74,9 @@ async def authenticate_middleware(request: Request, call_next):
 
     return await call_next(request)
 
-
+# Include API routes
 app.include_router(auth_router, prefix="/auth")
 app.include_router(api_router, prefix="/api")
-
 
 if __name__ == "__main__":
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

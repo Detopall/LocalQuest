@@ -67,9 +67,9 @@ async def update_quest(
     user_quest: Quest = Body(...),
     db: MongoClient = Depends(get_db_connection)
 ):
-    quest = crud_quests.put_quest_by_id_db(db=db, quest_id=quest_id, user_quest=user_quest, request=request)
+    quest, err = crud_quests.put_quest_by_id_db(db=db, quest_id=quest_id, user_quest=user_quest, request=request)
     if not quest:
-        raise HTTPException(status_code=404, detail="Quest not found")
+        raise HTTPException(status_code=404, detail=err)
     return JSONResponse(status_code=200, content={"quest": quest})
 
 

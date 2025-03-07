@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from fastapi import Request
 from bson import ObjectId
 from endpoints.api.user_cookie import get_user_from_cookie
+from .serialize import serialize_objectid
 
 
 class Quest(BaseModel):
@@ -35,23 +36,6 @@ def check_user_is_creator(quest: dict, user: dict):
 		return "User is the creator of this quest"
 
 	return ""  # User is not the creator, return an empty string
-
-
-
-def serialize_objectid(obj):
-	"""
-	Recursively converts ObjectId to string in a dict or list.
-	"""
-	if isinstance(obj, ObjectId):
-		return str(obj)
-	elif isinstance(obj, dict):
-		return {key: serialize_objectid(value) for key, value in obj.items()}
-	elif isinstance(obj, list):
-		return [serialize_objectid(item) for item in obj]
-	elif isinstance(obj, datetime):
-		return obj.isoformat()
-	else:
-		return obj
 
 
 def get_quests_db(db):
@@ -158,6 +142,7 @@ def put_quest_by_id_db(db, quest_id: str, user_quest: Quest, request: Request):
 
 	error_msg = check_user_is_creator(quest, user)
 	if error_msg != "User is the creator of this quest":
+		error_msg = "User is not the creator of this quest"
 		return None, error_msg
 
 	topics_collection = db["topics"]
@@ -188,20 +173,28 @@ def put_quest_by_id_db(db, quest_id: str, user_quest: Quest, request: Request):
 
 
 
-def delete_quest_by_id_db(db, quest_id: str):
+def delete_quest_by_id_db(db, quest_id: str) -> bool:
 	"""
 	Delete a quest by id
 
 	Args:
 		quest_id (str): Quest id
+
+	Returns:
+		bool: True if deleted
 	"""
 	try:
 		quest_id = ObjectId(quest_id)
 	except Exception as e:
 		return None, "Invalid quest ID format"
 	quests_collection = db["quests"]
+
+	if not quests_collection.find_one({"_id": quest_id}):
+		return False
+
 	quests_collection.delete_one({"_id": quest_id})
 
+	return True
 
 def filter_quests_db(db, topics: List[str]):
 	"""
@@ -226,19 +219,20 @@ def filter_quests_db(db, topics: List[str]):
 	if not query_topic_ids:
 		return []
 
-	pipeline = [
-		{"$addFields": {
-			"topic_match_count": {
-				"$size": {
-					"$setIntersection": ["$topics", query_topic_ids]
-				}
-			}
-		}},
-		{"$match": {"topic_match_count": {"$gt": 0}}},  # Only include quests with topic matches
-		{"$sort": {"topic_match_count": -1}}
-	]
+	# Use a simple $in query instead of $setIntersection
+	quests = list(quests_collection.find({"topics": {"$in": query_topic_ids}}))
 
-	quests = list(quests_collection.aggregate(pipeline))
+	# Manual sorting by topic match count
+	for quest in quests:
+		# Calculate how many of the queried topics match this quest
+		quest["topic_match_count"] = sum(1 for topic_id in quest["topics"] if topic_id in query_topic_ids)
+
+	# Sort by match count (highest first)
+	quests.sort(key=lambda x: x["topic_match_count"], reverse=True)
+
+	# Remove the temporary topic_match_count field
+	for quest in quests:
+		quest.pop("topic_match_count", None)
 
 	return [serialize_objectid(quest) for quest in quests]
 
