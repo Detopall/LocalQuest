@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import FilterComponent from "@/components/FilterComponent";
 import MapComponent from "@/components/MapComponent";
 import Header from "@/components/Header";
+import { addToast } from "@heroui/react";
 
 const Home = () => {
 	const { user, loading } = useAuth();
@@ -10,7 +11,15 @@ const Home = () => {
 	if (loading) return <p>Loading...</p>;
 
 	if (!user) {
-		alert("Please log in to access this page.");
+		addToast({
+			title: "Unauthorized",
+			description: "You must be logged in to access this page.",
+			timeout: 3000,
+			shouldShowTimeoutProgress: true,
+			variant: "bordered",
+			radius: "md",
+			color: "danger",
+		});
 		return <Navigate to="/" />;
 	}
 

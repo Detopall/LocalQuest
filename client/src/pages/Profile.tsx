@@ -158,10 +158,9 @@ function Profile() {
 
 	return (
 		<div className="min-h-screen bg-slate-50">
-			<Header user={user} />
+			<Header user={user} profilePage={true} />
 
 			<main className="container mx-auto px-4 py-6">
-				{/* Simple Profile Header */}
 				<Card className="mb-6 shadow-md">
 					<CardBody className="p-6">
 						<div className="flex items-center gap-4">
@@ -171,9 +170,7 @@ function Profile() {
 							/>
 
 							<div>
-								<h1 className="text-2xl font-bold">
-									{user.username || "You"}
-								</h1>
+								<h1 className="text-2xl font-bold">{user.username || "You"}</h1>
 								<p className="text-gray-600">
 									{user.email || "No email provided"}
 								</p>
@@ -182,7 +179,6 @@ function Profile() {
 					</CardBody>
 				</Card>
 
-				{/* Filters Section */}
 				<Card className="mb-6 shadow-sm">
 					<CardHeader className="pb-3">
 						<h2 className="text-lg flex items-center gap-2">
