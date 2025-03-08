@@ -95,6 +95,35 @@ async def auth(user: dict, db: MongoClient = Depends(get_db_connection)):
 
 	return response
 
+@router.post("/logout")
+async def logout(request: Request, db: MongoClient = Depends(get_db_connection)):
+	"""
+	Logout the user by deleting the cookie from the database.
+	"""
+	cookies_collection = db["cookies"]
+
+	auth_token = request.cookies.get("auth_token")
+	if not auth_token:
+		raise HTTPException(status_code=401, detail="No authentication token found")
+
+	try:
+		decrypted_token = decrypt_cookie(auth_token)
+		username = decrypted_token.split(":")[0]
+	except:
+		raise HTTPException(status_code=401, detail="Invalid authentication token")
+
+	db_cookie = cookies_collection.find_one({"username": username, "cookie": auth_token})
+	if not db_cookie:
+		raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
+
+	cookies_collection.delete_one({"username": username, "cookie": auth_token})
+
+	response = JSONResponse(content={"message": "Logout successful"})
+
+	response.delete_cookie("auth_token")
+
+	return response
+
 @router.get("/me")
 async def auth(request: Request, db: MongoClient = Depends(get_db_connection)):
 	"""

@@ -10,6 +10,7 @@ const Home = () => {
 	if (loading) return <p>Loading...</p>;
 
 	if (!user) {
+		alert("Please log in to access this page.");
 		return <Navigate to="/" />;
 	}
 

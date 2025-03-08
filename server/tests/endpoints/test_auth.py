@@ -94,3 +94,41 @@ def test_auth_me_invalid_token(client):
 
 	assert response.status_code == 401
 	assert response.json()["detail"] == "Invalid authentication token"
+
+
+def test_logout(client, test_db):
+	"""
+	Test logout.
+	"""
+
+	generate_cookies_from_user(client, test_db)
+	auth_token = client.cookies["auth_token"]
+	username = test_db["cookies"].find_one({"cookie": auth_token})["username"]
+
+	response = client.post("/auth/logout")
+
+	assert response.status_code == 200
+	assert response.json()["message"] == "Logout successful"
+
+	assert test_db["cookies"].find_one({"username": username, "cookie": auth_token}) is None
+
+def test_logout_no_cookie(client):
+	"""
+	Test logout when no cookie is provided.
+	"""
+	response = client.post("/auth/logout")
+
+	assert response.status_code == 401
+	assert response.json()["detail"] == "No authentication token found"
+
+def test_logout_invalid_token(client):
+	"""
+	Test logout with an invalid token.
+	"""
+
+	client.cookies["auth_token"] = "invalidtoken"
+
+	response = client.post("/auth/logout")
+
+	assert response.status_code == 401
+	assert response.json()["detail"] == "Invalid authentication token"
