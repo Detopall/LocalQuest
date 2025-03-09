@@ -1,4 +1,6 @@
 import { Avatar, Button } from "@heroui/react";
+import { useState } from "react";
+import CreateQuestModal from "@/components/CreateQuestModal";
 
 interface HeaderProps {
 	user: any;
@@ -6,6 +8,11 @@ interface HeaderProps {
 }
 
 function Header({ user, profilePage }: HeaderProps) {
+	const [isOpen, setIsOpen] = useState(false);
+
+	const handleOpen = () => setIsOpen(true);
+	const handleClose = () => setIsOpen(false);
+
 	async function handleLogout() {
 		await fetch("http://localhost:8000/auth/logout", {
 			method: "POST",
@@ -46,7 +53,13 @@ function Header({ user, profilePage }: HeaderProps) {
 					<h1 className="text-3xl font-bold">LocalQuest</h1>
 				</a>
 				<div className="flex items-center gap-3">
-					<Button isIconOnly aria-label="Quest" color="primary" variant="ghost">
+					<Button
+						isIconOnly
+						aria-label="Quest"
+						color="primary"
+						variant="ghost"
+						onPress={handleOpen}
+					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							width="24"
@@ -108,6 +121,8 @@ function Header({ user, profilePage }: HeaderProps) {
 						</svg>
 					</Button>
 				</div>
+
+				<CreateQuestModal isOpen={isOpen} onClose={handleClose} />
 			</div>
 		)
 	);
