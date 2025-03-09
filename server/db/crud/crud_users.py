@@ -31,20 +31,41 @@ def get_user_by_id_db(db, user_id: str):
 	"""
 
 	users_collection = db["users"]
+	quests_collection = db["quests"]
+	topics_collection = db["topics"]
+
 	user = users_collection.find_one({"_id": ObjectId(user_id)})
 
 	if not user:
 		return None
 
-	# Get all quests from that user
-	quests_collection = db["quests"]
-	quests = quests_collection.find({"creator": ObjectId(user_id)})
-	user["created_quests"] = [serialize_objectid(quest) for quest in quests]
+	# Fetch created quests
+	created_quests = list(quests_collection.find({"created_by": ObjectId(user_id)}))
+	for quest in created_quests:
+		quest["topics"] = [fetch_topic(topics_collection, topic_id) for topic_id in quest.get("topics", [])]
+		quest["applicants"] = [fetch_user(users_collection, applicant_id) for applicant_id in quest.get("applicants", [])]
 
-	quests = quests_collection.find({"applicants": ObjectId(user_id)})
-	user["applied_quests"] = [serialize_objectid(quest) for quest in quests]
+	# Fetch applied quests
+	applied_quests = list(quests_collection.find({"applicants": ObjectId(user_id)}))
+	for quest in applied_quests:
+		quest["topics"] = [fetch_topic(topics_collection, topic_id) for topic_id in quest.get("topics", [])]
+		quest["applicants"] = [fetch_user(users_collection, applicant_id) for applicant_id in quest.get("applicants", [])]
+
+	user["created_quests"] = [serialize_objectid(quest) for quest in created_quests]
+	user["applied_quests"] = [serialize_objectid(quest) for quest in applied_quests]
 
 	return serialize_objectid(user)
+
+def fetch_topic(topics_collection, topic_id):
+	"""Fetches topic details by ID."""
+	topic = topics_collection.find_one({"_id": ObjectId(topic_id)})
+	return topic["name"] if topic else "Unknown Topic"
+
+def fetch_user(users_collection, user_id):
+	"""Fetches user details by ID."""
+	user = users_collection.find_one({"_id": ObjectId(user_id)})
+	return {"_id": str(user["_id"]), "username": user.get("username", "Unknown User")} if user else {"_id": str(user_id), "username": "Unknown User"}
+
 
 
 def delete_user_by_id_db(db, request: Request, user_id: str):

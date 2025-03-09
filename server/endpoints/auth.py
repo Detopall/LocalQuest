@@ -158,4 +158,4 @@ async def auth(request: Request, db: MongoClient = Depends(get_db_connection)):
 	if not user:
 		raise HTTPException(status_code=401, detail="User not found")
 
-	return JSONResponse(content={"message": "Authentication successful", "username": user["username"], "email": user.get("email")})
+	return JSONResponse(content={"message": "Authentication successful", "username": user["username"], "email": user.get("email"), "_id": str(user["_id"])})

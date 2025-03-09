@@ -31,7 +31,7 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 		latitude: "",
 		price: "",
 		deadline: now(getLocalTimeZone()).toString(),
-		selectedTopics: [] as string[],
+		topics: [] as string[],
 	});
 	const cache = useRef<CacheType>({});
 
@@ -47,10 +47,7 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 			}
 
 			try {
-				const response = await fetch(cacheKey, {
-					credentials: "include",
-				});
-
+				const response = await fetch(cacheKey, { credentials: "include" });
 				if (response.ok) {
 					const fetchedTopics = await response.json();
 					const topicsArray = Array.isArray(fetchedTopics["topics"])
@@ -73,30 +70,24 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
-		setFormData((prev) => ({
-			...prev,
-			[name]: value,
-		}));
+		setFormData((prev) => ({ ...prev, [name]: value }));
 	};
 
 	const handleCheckboxChange = (topic: string) => {
 		setFormData((prev) => ({
 			...prev,
-			selectedTopics: prev.selectedTopics.includes(topic)
-				? prev.selectedTopics.filter((t) => t !== topic)
-				: [...prev.selectedTopics, topic],
+			topics: prev.topics.includes(topic)
+				? prev.topics.filter((t) => t !== topic)
+				: [...prev.topics, topic],
 		}));
 	};
 
 	async function handleCreateQuest() {
 		const questData = {
-			title: formData.title,
-			description: formData.description,
+			...formData,
 			longitude: parseFloat(formData.longitude),
 			latitude: parseFloat(formData.latitude),
 			price: parseFloat(formData.price),
-			deadline: formData.deadline,
-			topics: formData.selectedTopics,
 		};
 
 		console.log(questData);
@@ -126,117 +117,113 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 			isOpen={isOpen}
 			onClose={onClose}
 			backdrop="blur"
-			className="flex items-center justify-center bg-background/80 backdrop-blur-md border border-primary-500"
-			size="5xl"
+			size="lg"
+			className="p-4"
 		>
-			<ModalContent className="max-h-[90vh] overflow-hidden">
+			<ModalContent className="max-h-[90vh] w-full max-w-lg mx-auto overflow-hidden">
 				{(onClose) => (
 					<>
-						<ModalHeader className="flex flex-col items-center gap-5">
-							<h3 className="text-3xl font-extrabold text-primary-600 bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-secondary-500">
+						<ModalHeader className="text-center">
+							<h3 className="text-xl font-bold text-primary-600">
 								Create a Quest
 							</h3>
 						</ModalHeader>
-						<ModalBody className="overflow-y-auto">
-							<div className="flex flex-col items-center">
-								<Form>
-									<Input
-										isRequired
-										name="title"
-										label="Title"
-										labelPlacement="outside"
-										placeholder="Enter the title of your quest"
-										value={formData.title}
-										onChange={handleChange}
-										validate={(val) => {
-											if (val.length < 3) {
-												return "Title must be at least 3 characters long";
-											}
-										}}
-									/>
-									<Input
-										isRequired
-										name="description"
-										label="Description"
-										labelPlacement="outside"
-										placeholder="Enter the description of your quest"
-										value={formData.description}
-										onChange={handleChange}
-										validate={(val) => {
-											if (val.length < 5) {
-												return "Description must be at least 5 characters long";
-											}
-										}}
-									/>
-									<div className="flex items-center gap-2">
-										{topics.map((topic) => (
-											<Checkbox
-												key={topic}
-												isSelected={formData.selectedTopics.includes(topic)}
-												onChange={() => handleCheckboxChange(topic)}
-											>
-												{topic}
-											</Checkbox>
-										))}
-									</div>
+						<ModalBody className="overflow-y-auto px-4">
+							<Form className="space-y-4">
+								<Input
+									isRequired
+									name="title"
+									label="Title"
+									placeholder="Enter quest title"
+									value={formData.title}
+									onChange={handleChange}
+									className="w-full"
+								/>
+								<Input
+									isRequired
+									name="description"
+									label="Description"
+									placeholder="Enter quest description"
+									value={formData.description}
+									onChange={handleChange}
+									className="w-full"
+								/>
+								<div className="flex flex-wrap gap-2">
+									{topics.map((topic) => (
+										<Checkbox
+											key={topic}
+											isSelected={formData.topics.includes(topic)}
+											onChange={() => handleCheckboxChange(topic)}
+											className="text-sm"
+										>
+											{topic}
+										</Checkbox>
+									))}
+								</div>
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									<Input
 										isRequired
 										name="longitude"
 										label="Longitude"
-										labelPlacement="outside"
-										placeholder="Enter the longitude of the location of your quest (ex.: 12.34567)"
+										placeholder="e.g., 12.34567"
 										value={formData.longitude}
 										onChange={handleChange}
+										className="w-full"
 									/>
 									<Input
 										isRequired
 										name="latitude"
 										label="Latitude"
-										labelPlacement="outside"
-										placeholder="Enter the latitude of the location of your quest (ex.: 12.34567)"
+										placeholder="e.g., 12.34567"
 										value={formData.latitude}
 										onChange={handleChange}
+										className="w-full"
 									/>
-									<Input
-										isRequired
-										name="price"
-										label="Price"
-										labelPlacement="outside"
-										placeholder="Enter the price you want to get paid for your quest"
-										value={formData.price}
-										onChange={handleChange}
-									/>
-									<DatePicker
-										hideTimeZone
-										isRequired
-										showMonthAndYearPickers
-										defaultValue={now(getLocalTimeZone())}
-										label="Event Date"
-										variant="bordered"
-										firstDayOfWeek="mon"
-										onChange={(date) => {
-											if (date) {
-												// Format the date to "YYYY-MM-DD HH:mm:ss" (Python-compatible datetime format)
-												const formattedDate = `${date.year}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")} ${String(date.hour || 0).padStart(2, "0")}:${String(date.minute || 0).padStart(2, "0")}:${String(date.second || 0).padStart(2, "0")}`;
-												setFormData((prev) => ({
-													...prev,
-													deadline: formattedDate,
-												}));
-											}
-										}}
-									/>
-								</Form>
-							</div>
+								</div>
+								<Input
+									isRequired
+									name="price"
+									label="Price (bux)"
+									placeholder="Enter quest price"
+									value={formData.price}
+									onChange={handleChange}
+									className="w-full"
+								/>
+								<DatePicker
+									hideTimeZone
+									isRequired
+									showMonthAndYearPickers
+									defaultValue={now(getLocalTimeZone())}
+									label="Deadline"
+									variant="bordered"
+									firstDayOfWeek="mon"
+									onChange={(date) => {
+										if (date) {
+											const formattedDate = `${date.year}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")} ${String(date.hour || 0).padStart(2, "0")}:${String(date.minute || 0).padStart(2, "0")}:${String(date.second || 0).padStart(2, "0")}`;
+											setFormData((prev) => ({
+												...prev,
+												deadline: formattedDate,
+											}));
+										}
+									}}
+								/>
+							</Form>
 						</ModalBody>
-						<ModalFooter className="flex justify-center gap-4 border-t border-primary-200">
+						<ModalFooter className="flex flex-col sm:flex-row justify-center gap-2 border-t border-gray-200 p-4">
 							<Button
 								color="primary"
-								variant="ghost"
+								variant="solid"
+								className="w-full sm:w-auto"
 								onPress={handleCreateQuest}
 							>
 								Create Quest
 							</Button>
-							<Button color="danger" variant="ghost" onPress={onClose}>
+							<Button
+								color="danger"
+								variant="ghost"
+								className="w-full sm:w-auto"
+								onPress={onClose}
+							>
 								Close
 							</Button>
 						</ModalFooter>
