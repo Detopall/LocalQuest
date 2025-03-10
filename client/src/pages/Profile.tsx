@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import ProfileComponent from "@/components/ProfileComponent";
 
-interface Quest {
+export interface Quest {
 	_id: string;
 	title: string;
 	description: string;

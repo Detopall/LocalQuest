@@ -10,6 +10,7 @@ import {
 	Chip,
 } from "@heroui/react";
 import { useEffect, useState } from "react";
+import ApplicantsModal from "@/components/ApplicantsModal";
 import CreateQuestModal from "@/components/CreateQuestModal";
 import Header from "@/components/Header";
 import {
@@ -18,7 +19,9 @@ import {
 	DangerSvg,
 	TrashSvg,
 	EditSvg,
+	GroupSvg,
 } from "@/components/svgs";
+import { Quest } from "@/pages/Profile";
 
 interface ProfileComponentProps {
 	user: any;
@@ -51,11 +54,14 @@ function ProfileComponent({
 	locations,
 }: ProfileComponentProps) {
 	const [isOpen, setIsOpen] = useState(false);
+	const [applicantsOpen, setApplicantsOpen] = useState(false);
 	const [pendingOpen, setPendingOpen] = useState(false);
-	const handleClose = () => setIsOpen(false);
 	const [selectedQuest, setSelectedQuest] = useState<ModifiedQuest | null>(
 		null
 	);
+	const [applicantsQuest, setApplicantsQuest] = useState<Quest | null>(null);
+	const handleClose = () => setIsOpen(false);
+	const handleCloseApplicants = () => setApplicantsOpen(false);
 
 	const statusOptions = [
 		{ key: "all", label: "All Quests" },
@@ -111,6 +117,11 @@ function ProfileComponent({
 		setPendingOpen(true);
 	}
 
+	function handleShowApplicants(quest: Quest) {
+		setApplicantsQuest(quest);
+		setApplicantsOpen(true);
+	}
+
 	useEffect(() => {
 		if (pendingOpen && selectedQuest) {
 			setIsOpen(true);
@@ -138,7 +149,7 @@ function ProfileComponent({
 					</CardBody>
 				</Card>
 
-				<Card className="mb-6 shadow-sm">
+				<Card className="mb-6 shadow-sm max-w-xl mx-auto">
 					<CardHeader className="pb-3">
 						<h2 className="text-lg flex items-center gap-2">
 							<Filter size={18} />
@@ -204,6 +215,14 @@ function ProfileComponent({
 										<div className="flex justify-between items-start mb-2">
 											<h3 className="text-lg font-semibold">{quest.title}</h3>
 											<div className="flex flex-wrap gap-2">
+												<Button
+													isIconOnly
+													aria-label="Applicants"
+													color="secondary"
+													onPress={() => handleShowApplicants(quest)}
+												>
+													<GroupSvg />
+												</Button>
 												<Button
 													isIconOnly
 													aria-label="Edit"
@@ -275,6 +294,13 @@ function ProfileComponent({
 						isOpen={isOpen}
 						onClose={handleClose}
 						quest={selectedQuest}
+					/>
+				)}
+				{applicantsQuest && (
+					<ApplicantsModal
+						isOpen={applicantsOpen}
+						onClose={handleCloseApplicants}
+						quest={applicantsQuest}
 					/>
 				)}
 			</main>

@@ -2,6 +2,7 @@ import Hero from "@/components/Hero";
 import Home from "@/pages/Home";
 import { AuthProvider } from "@/components/AuthContext";
 import Profile from "@/pages/Profile";
+import ProfileApplicants from "@/pages/ProfileApplicants";
 import { Route, Routes } from "react-router-dom";
 
 function App() {
@@ -21,6 +22,14 @@ function App() {
 				element={
 					<AuthProvider>
 						<Profile />
+					</AuthProvider>
+				}
+			/>
+			<Route
+				path="/profile/:username"
+				element={
+					<AuthProvider>
+						<ProfileApplicants />
 					</AuthProvider>
 				}
 			/>
