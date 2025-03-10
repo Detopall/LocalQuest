@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { Button } from "@heroui/react";
-import LogoSvg from "@/components/LogoSvg";
+import { LogoSvg } from "@/components/svgs";
 import AuthModal, { AuthModalRef } from "@/components/AuthModal";
 
 function Hero() {

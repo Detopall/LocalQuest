@@ -22,30 +22,43 @@ interface CacheType {
 	[key: string]: any;
 }
 
-function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
+interface CreateQuestModalProps {
+	isOpen: boolean;
+	onClose: () => void;
+	quest?: {
+		_id: string;
+		title: string;
+		description: string;
+		longitude: string;
+		latitude: string;
+		price: string;
+		deadline: string;
+		topics: string[];
+	};
+}
+
+function CreateQuestModal({ isOpen, onClose, quest }: CreateQuestModalProps) {
 	const [topics, setTopics] = useState<string[]>([]);
 	const [formData, setFormData] = useState({
-		title: "",
-		description: "",
-		longitude: "",
-		latitude: "",
-		price: "",
-		deadline: now(getLocalTimeZone()).toString(),
-		topics: [] as string[],
+		title: quest?.title || "",
+		description: quest?.description || "",
+		longitude: quest?.longitude || "",
+		latitude: quest?.latitude || "",
+		price: quest?.price || "",
+		deadline: quest?.deadline || "",
+		topics: quest?.topics || [],
 	});
 	const cache = useRef<CacheType>({});
 
 	useEffect(() => {
 		async function getTopics() {
 			const cacheKey = "http://localhost:8000/api/topics";
-
 			if (cache.current[cacheKey]) {
 				setTopics(
 					Array.isArray(cache.current[cacheKey]) ? cache.current[cacheKey] : []
 				);
 				return;
 			}
-
 			try {
 				const response = await fetch(cacheKey, { credentials: "include" });
 				if (response.ok) {
@@ -53,7 +66,6 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 					const topicsArray = Array.isArray(fetchedTopics["topics"])
 						? fetchedTopics["topics"]
 						: [];
-
 					cache.current[cacheKey] = topicsArray;
 					setTopics(topicsArray);
 				} else {
@@ -64,7 +76,6 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 				setTopics([]);
 			}
 		}
-
 		getTopics();
 	}, []);
 
@@ -82,7 +93,7 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 		}));
 	};
 
-	async function handleCreateQuest() {
+	async function handleSubmit() {
 		const questData = {
 			...formData,
 			longitude: parseFloat(formData.longitude),
@@ -90,25 +101,28 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 			price: parseFloat(formData.price),
 		};
 
-		console.log(questData);
-
 		try {
-			const response = await fetch("http://localhost:8000/api/quests", {
-				method: "POST",
+			const url = quest
+				? `http://localhost:8000/api/quests/${quest._id}`
+				: "http://localhost:8000/api/quests";
+			const method = quest ? "PUT" : "POST";
+
+			const response = await fetch(url, {
+				method,
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
 				body: JSON.stringify(questData),
 			});
 
 			if (response.ok) {
-				console.log("Quest created successfully!");
+				console.log(`Quest ${quest ? "updated" : "created"} successfully!`);
 				onClose();
 				window.location.reload();
 			} else {
-				console.error("Failed to create quest");
+				console.error(`Failed to ${quest ? "update" : "create"} quest`);
 			}
 		} catch (error) {
-			console.error("Error creating quest:", error);
+			console.error(`Error ${quest ? "updating" : "creating"} quest:`, error);
 		}
 	}
 
@@ -125,7 +139,7 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 					<>
 						<ModalHeader className="text-center">
 							<h3 className="text-xl font-bold text-primary-600">
-								Create a Quest
+								{quest ? "Edit Quest" : "Create a Quest"}
 							</h3>
 						</ModalHeader>
 						<ModalBody className="overflow-y-auto px-4">
@@ -137,7 +151,6 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 									placeholder="Enter quest title"
 									value={formData.title}
 									onChange={handleChange}
-									className="w-full"
 								/>
 								<Input
 									isRequired
@@ -146,7 +159,6 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 									placeholder="Enter quest description"
 									value={formData.description}
 									onChange={handleChange}
-									className="w-full"
 								/>
 								<div className="flex flex-wrap gap-2">
 									{topics.map((topic) => (
@@ -154,7 +166,6 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 											key={topic}
 											isSelected={formData.topics.includes(topic)}
 											onChange={() => handleCheckboxChange(topic)}
-											className="text-sm"
 										>
 											{topic}
 										</Checkbox>
@@ -168,7 +179,6 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 										placeholder="e.g., 12.34567"
 										value={formData.longitude}
 										onChange={handleChange}
-										className="w-full"
 									/>
 									<Input
 										isRequired
@@ -177,7 +187,6 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 										placeholder="e.g., 12.34567"
 										value={formData.latitude}
 										onChange={handleChange}
-										className="w-full"
 									/>
 								</div>
 								<Input
@@ -187,7 +196,6 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 									placeholder="Enter quest price"
 									value={formData.price}
 									onChange={handleChange}
-									className="w-full"
 								/>
 								<DatePicker
 									hideTimeZone
@@ -214,9 +222,9 @@ function CreateQuestModal({ isOpen, onClose }: CreateQuestModalProps) {
 								color="primary"
 								variant="solid"
 								className="w-full sm:w-auto"
-								onPress={handleCreateQuest}
+								onPress={handleSubmit}
 							>
-								Create Quest
+								{quest ? "Update Quest" : "Create Quest"}
 							</Button>
 							<Button
 								color="danger"

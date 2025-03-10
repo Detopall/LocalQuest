@@ -1,7 +1,9 @@
 import { Card, CardBody, Chip, CardHeader } from "@heroui/react";
 import { MapPin, Calendar, DollarSign } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface QuestProps {
+	_id: string;
 	title: string;
 	description: string;
 	topics: string[];
@@ -34,10 +36,10 @@ const QuestCard = ({ quest }: { quest: QuestProps }) => {
 	return (
 		<Card className="max-w-md mx-auto p-4 shadow-lg rounded-2xl border">
 			<CardHeader>
-				<h2 className="text-xl font-bold">{quest.title}</h2>
+				<h2 className="text-xl font-bold">Title: {quest.title}</h2>
 			</CardHeader>
 			<CardBody>
-				<p className="mb-4">{quest.description}</p>
+				<p className="mb-4">Description: {quest.description}</p>
 				<div className="flex flex-wrap gap-2 mb-4">
 					{quest.topics.map((topic, index) => (
 						<Chip key={index} color="primary" variant="shadow">
@@ -45,13 +47,28 @@ const QuestCard = ({ quest }: { quest: QuestProps }) => {
 						</Chip>
 					))}
 				</div>
-				<div className="flex items-center gap-2">
-					<MapPin size={16} />
-					<span>{formatLocation(quest.location)}</span>
-					<DollarSign size={16} />
-					<span>{quest.price.toFixed(2)}</span>
-					<Calendar size={16} />
-					<span>{new Date(quest.deadline).toLocaleDateString()}</span>
+				<div className="flex items-center gap-2  flex-col mb-4">
+					<h3 className="text-lg font-bold"> Applicants </h3>
+					<div className="flex items-center flex-col gap-2 mb-4">
+						{quest.applicants.map((applicant, index) => (
+							<Link key={index} to={`/profile/${applicant.username}`}>
+								<Chip key={index} color="primary" variant="shadow">
+									{applicant.username}
+								</Chip>
+							</Link>
+						))}
+					</div>
+				</div>
+				<div className="flex justify-between items-center text-sm text-gray-600">
+					<div className="flex items-center gap-1">
+						<MapPin size={14} />
+						<span>
+							{location ? formatLocation(quest.location) : "Unknown"}
+						</span>
+					</div>
+					<div className="font-medium text-primary">
+						bux: {quest.price.toFixed(2)}
+					</div>
 				</div>
 			</CardBody>
 		</Card>

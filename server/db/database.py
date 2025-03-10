@@ -23,9 +23,7 @@ def create_users_table(db):
                 "email": {
                     "bsonType": "string",
                     "pattern": r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-                },
-                "created_quests": {"bsonType": "array", "items": {"bsonType": "objectId"}},
-                "applied_quests": {"bsonType": "array", "items": {"bsonType": "objectId"}}
+                }
             }
         }
     })
