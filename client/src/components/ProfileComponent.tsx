@@ -1,4 +1,4 @@
-import { MapPin, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 import {
 	Card,
 	CardBody,
@@ -7,21 +7,13 @@ import {
 	Avatar,
 	Button,
 	CardHeader,
-	Chip,
 } from "@heroui/react";
 import { useEffect, useState } from "react";
 import ApplicantsModal from "@/components/ApplicantsModal";
 import CreateQuestModal from "@/components/CreateQuestModal";
 import Header from "@/components/Header";
-import {
-	ClockSvg,
-	WarningSvg,
-	DangerSvg,
-	TrashSvg,
-	EditSvg,
-	GroupSvg,
-} from "@/components/svgs";
 import { Quest } from "@/pages/Profile";
+import QuestCard from "@/components/QuestCard";
 
 interface ProfileComponentProps {
 	user: any;
@@ -29,8 +21,12 @@ interface ProfileComponentProps {
 	setStatusFilter: (filter: string) => void;
 	setTopicFilter: (filter: string) => void;
 	filteredQuests: any[];
+	topicFilter: string;
 	allTopics: string[];
 	locations: { [key: string]: any };
+	otherUserData?: any;
+	appliedQuests: any[];
+	createdQuests: any[];
 }
 
 interface ModifiedQuest {
@@ -48,10 +44,14 @@ function ProfileComponent({
 	user,
 	statusFilter,
 	setStatusFilter,
+	topicFilter,
 	setTopicFilter,
 	filteredQuests,
 	allTopics,
 	locations,
+	otherUserData,
+	appliedQuests,
+	createdQuests,
 }: ProfileComponentProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [applicantsOpen, setApplicantsOpen] = useState(false);
@@ -60,6 +60,9 @@ function ProfileComponent({
 		null
 	);
 	const [applicantsQuest, setApplicantsQuest] = useState<Quest | null>(null);
+
+	const displayedUser = otherUserData || user;
+
 	const handleClose = () => setIsOpen(false);
 	const handleCloseApplicants = () => setApplicantsOpen(false);
 
@@ -69,29 +72,29 @@ function ProfileComponent({
 		{ key: "closed", label: "Closed" },
 	];
 
-	function getDeadlineChip(deadline: string) {
-		const deadlineDate = new Date(deadline);
-		const now = new Date();
-		const timeDiff = deadlineDate.getTime() - now.getTime();
-		const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+	const filteredCreatedQuests = createdQuests.filter((quest) => {
+		const statusMatch =
+			statusFilter === "all" ||
+			(statusFilter === "open" && quest.status === "open") ||
+			(statusFilter === "closed" && quest.status === "closed");
 
-		let color: "success" | "warning" | "danger" = "success";
-		let icon = <ClockSvg />;
+		const topicMatch =
+			topicFilter === "all" || quest.topics.includes(topicFilter);
 
-		if (daysDiff <= 7 && daysDiff > 1) {
-			color = "warning";
-			icon = <WarningSvg />;
-		} else if (daysDiff <= 1) {
-			color = "danger";
-			icon = <DangerSvg />;
-		}
+		return statusMatch && topicMatch;
+	});
 
-		return (
-			<Chip variant="shadow" color={color} startContent={icon}>
-				{deadlineDate.toLocaleDateString()}
-			</Chip>
-		);
-	}
+	const filteredAppliedQuests = appliedQuests.filter((quest) => {
+		const statusMatch =
+			statusFilter === "all" ||
+			(statusFilter === "open" && quest.status === "open") ||
+			(statusFilter === "closed" && quest.status === "closed");
+
+		const topicMatch =
+			topicFilter === "all" || quest.topics.includes(topicFilter);
+
+		return statusMatch && topicMatch;
+	});
 
 	async function handleDeleteQuest(questId: number) {
 		try {
@@ -109,6 +112,25 @@ function ProfileComponent({
 			}
 		} catch (error) {
 			console.error("Error deleting quest:", error);
+		}
+	}
+
+	async function handleApplyQuest(quest: any) {
+		try {
+			const response = await fetch(
+				`http://localhost:8000/api/quests/${quest._id}/apply`,
+				{
+					method: "POST",
+					credentials: "include",
+				}
+			);
+			if (response.ok) {
+				window.location.reload();
+			} else {
+				console.error("Failed to apply to quest");
+			}
+		} catch (error) {
+			console.error("Error applying to quest:", error);
 		}
 	}
 
@@ -131,7 +153,7 @@ function ProfileComponent({
 
 	return (
 		<div className="min-h-screen bg-slate-50">
-			<Header user={user} profilePage={true} />
+			<Header user={displayedUser} profilePage={true} />
 
 			<main className="container mx-auto px-4 py-6">
 				<Card className="mb-6 shadow-md">
@@ -141,9 +163,11 @@ function ProfileComponent({
 							src="https://i.pravatar.cc/150?u=a04258114e29026708c"
 						/>
 						<div>
-							<h1 className="text-2xl font-bold">{user.username || "You"}</h1>
+							<h1 className="text-2xl font-bold">
+								{displayedUser.username || "You"}
+							</h1>
 							<p className="text-gray-600">
-								{user.email || "No email provided"}
+								{displayedUser.email || "No email provided"}
 							</p>
 						</div>
 					</CardBody>
@@ -160,9 +184,7 @@ function ProfileComponent({
 						<Select
 							defaultSelectedKeys={["all"]}
 							label="Status"
-							onChange={(e) => {
-								setStatusFilter(e.target.value.toLowerCase());
-							}}
+							onChange={(e) => setStatusFilter(e.target.value.toLowerCase())}
 							value={statusFilter}
 						>
 							{statusOptions.map((option) => (
@@ -198,111 +220,68 @@ function ProfileComponent({
 
 				<div className="space-y-4 flex justify-center flex-col items-center">
 					<h2 className="text-xl font-semibold mb-4">
-						Your Quests ({filteredQuests.length})
+						Total Quests ({filteredQuests.length})
 					</h2>
 
-					{filteredQuests.length > 0 ? (
-						filteredQuests.map((quest: any) => {
-							const location =
-								locations[`${quest.latitude}_${quest.longitude}`] || {};
-
-							return (
-								<Card
+					{filteredCreatedQuests.length > 0 && (
+						<>
+							<h2 className="text-xl font-semibold mb-4">
+								Created Quests ({filteredCreatedQuests.length})
+							</h2>
+							{filteredCreatedQuests.map((quest) => (
+								<QuestCard
 									key={quest._id}
-									className="overflow-hidden hover:shadow-md transition-shadow w-3/4"
-								>
-									<CardBody className="p-4">
-										<div className="flex justify-between items-start mb-2">
-											<h3 className="text-lg font-semibold">{quest.title}</h3>
-											<div className="flex flex-wrap gap-2">
-												<Button
-													isIconOnly
-													aria-label="Applicants"
-													color="secondary"
-													onPress={() => handleShowApplicants(quest)}
-												>
-													<GroupSvg />
-												</Button>
-												<Button
-													isIconOnly
-													aria-label="Edit"
-													color="warning"
-													onPress={() => handleEditQuest(quest)}
-												>
-													<EditSvg />
-												</Button>
-												<Button
-													isIconOnly
-													aria-label="Edit"
-													color="danger"
-													onPress={() => handleDeleteQuest(quest)}
-												>
-													<TrashSvg />
-												</Button>
-											</div>
-										</div>
+									quest={quest}
+									handleShowApplicants={handleShowApplicants}
+									handleEditQuest={handleEditQuest}
+									handleDeleteQuest={handleDeleteQuest}
+									handleApplyQuest={handleApplyQuest}
+									location={
+										locations[`${quest.latitude}_${quest.longitude}`] || {}
+									}
+									user={user}
+								/>
+							))}
+						</>
+					)}
 
-										<p className="text-gray-700 mb-3">{quest.description}</p>
-
-										<div className="flex flex-wrap gap-2 mb-3">
-											{quest.topics.map((topic: string, index: number) => (
-												<Chip key={index} variant="shadow" color="primary">
-													{topic}
-												</Chip>
-											))}
-										</div>
-
-										<div className="flex justify-between items-center text-sm text-gray-600">
-											<div className="flex items-center gap-1">
-												<MapPin size={14} />
-												<span>
-													{location.town ||
-														location.village ||
-														location.city ||
-														location.state ||
-														location.province ||
-														location.region ||
-														"Unknown"}
-													, {location.country || "Unknown"}
-												</span>
-											</div>
-											<div className="flex items-center gap-5">
-												{getDeadlineChip(quest.deadline)}
-												<Chip
-													variant="shadow"
-													color={quest.status === "open" ? "success" : "danger"}
-												>
-													{quest.status}
-												</Chip>
-												bux: {quest.price.toFixed(2)}
-											</div>
-										</div>
-									</CardBody>
-								</Card>
-							);
-						})
-					) : (
-						<div className="text-center p-8 bg-white rounded-lg border">
-							<p className="text-gray-500">
-								No matching quests found. Try adjusting your filters.
-							</p>
-						</div>
+					{filteredAppliedQuests.length > 0 && (
+						<>
+							<h2 className="text-xl font-semibold mt-6 mb-4">
+								Applied Quests ({filteredAppliedQuests.length})
+							</h2>
+							{filteredAppliedQuests.map((quest) => (
+								<QuestCard
+									key={quest._id}
+									quest={quest}
+									handleApplyQuest={handleApplyQuest}
+									user={user}
+									handleShowApplicants={handleShowApplicants}
+									handleEditQuest={handleEditQuest}
+									handleDeleteQuest={handleDeleteQuest}
+									location={
+										locations[`${quest.latitude}_${quest.longitude}`] || {}
+									}
+								/>
+							))}
+						</>
+					)}
+					{selectedQuest && !pendingOpen && (
+						<CreateQuestModal
+							isOpen={isOpen}
+							onClose={handleClose}
+							quest={selectedQuest}
+						/>
+					)}
+					{applicantsQuest && (
+						<ApplicantsModal
+							isOpen={applicantsOpen}
+							onClose={handleCloseApplicants}
+							quest={applicantsQuest}
+							user={user}
+						/>
 					)}
 				</div>
-				{selectedQuest && !pendingOpen && (
-					<CreateQuestModal
-						isOpen={isOpen}
-						onClose={handleClose}
-						quest={selectedQuest}
-					/>
-				)}
-				{applicantsQuest && (
-					<ApplicantsModal
-						isOpen={applicantsOpen}
-						onClose={handleCloseApplicants}
-						quest={applicantsQuest}
-					/>
-				)}
 			</main>
 		</div>
 	);

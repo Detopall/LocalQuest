@@ -59,30 +59,39 @@ async function fetchLocation(lat: number, lon: number) {
 	}
 }
 
-function Profile() {
-	const [quests, setQuests] = useState<Quest[]>([]);
+interface ProfileProps {
+	otherUserId?: string;
+}
+
+function Profile({ otherUserId }: ProfileProps) {
+	const [createdQuests, setCreatedQuests] = useState<Quest[]>([]);
+	const [appliedQuests, setAppliedQuests] = useState<Quest[]>([]);
 	const [filteredQuests, setFilteredQuests] = useState<Quest[]>([]);
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [topicFilter, setTopicFilter] = useState("all");
 	const { user, loading } = useAuth();
 	const [locations, setLocations] = useState<{ [key: string]: any }>({});
+	const [userData, setUserData] = useState<any>(null);
 
 	useEffect(() => {
 		if (!user) return;
+		const userId = otherUserId || user._id;
 
-		fetch(`http://localhost:8000/api/users/${user._id}`, {
+		fetch(`http://localhost:8000/api/users/${userId}`, {
 			credentials: "include",
 		})
 			.then((res) => res.json())
 			.then((data) => {
+				setCreatedQuests(data.user.created_quests || []);
+				setAppliedQuests(data.user.applied_quests || []);
+				setUserData(data.user);
+
 				const allQuests = [
-					...data.user.created_quests,
-					...data.user.applied_quests,
+					...(data.user.created_quests || []),
+					...(data.user.applied_quests || []),
 				];
-				setQuests(allQuests);
 				setFilteredQuests(allQuests);
 
-				// Fetch locations for quests with coordinates
 				allQuests.forEach((quest) => {
 					if (quest.latitude !== undefined && quest.longitude !== undefined) {
 						const locationKey = `${quest.latitude}_${quest.longitude}`;
@@ -100,10 +109,10 @@ function Profile() {
 				});
 			})
 			.catch((error) => console.error("Error fetching quests:", error));
-	}, [user]);
+	}, [user, otherUserId]);
 
 	useEffect(() => {
-		let result = [...quests];
+		let result = [...createdQuests, ...appliedQuests];
 
 		if (statusFilter !== "all") {
 			result = result.filter((quest) => quest.status === statusFilter);
@@ -114,7 +123,7 @@ function Profile() {
 		}
 
 		setFilteredQuests(result);
-	}, [statusFilter, topicFilter, quests]);
+	}, [statusFilter, topicFilter, createdQuests, appliedQuests]);
 
 	if (loading) {
 		return <p className="text-center py-8">Loading...</p>;
@@ -124,9 +133,27 @@ function Profile() {
 		return <Navigate to="/" />;
 	}
 
-	const allTopics = [...new Set(quests.flatMap((quest) => quest.topics))];
+	const allTopics = [
+		...new Set(
+			[...createdQuests, ...appliedQuests].flatMap((quest) => quest.topics)
+		),
+	];
 
-	return <ProfileComponent allTopics={allTopics} user={user} locations={locations} statusFilter={statusFilter} setStatusFilter={setStatusFilter} setTopicFilter={setTopicFilter} filteredQuests={filteredQuests} />;
+	return (
+		<ProfileComponent
+			allTopics={allTopics}
+			user={user}
+			locations={locations}
+			statusFilter={statusFilter}
+			setStatusFilter={setStatusFilter}
+			setTopicFilter={setTopicFilter}
+			topicFilter={topicFilter}
+			filteredQuests={filteredQuests}
+			otherUserData={userData}
+			appliedQuests={appliedQuests}
+			createdQuests={createdQuests}
+		/>
+	);
 }
 
 export default Profile;

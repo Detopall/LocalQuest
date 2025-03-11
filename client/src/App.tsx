@@ -2,7 +2,7 @@ import Hero from "@/components/Hero";
 import Home from "@/pages/Home";
 import { AuthProvider } from "@/components/AuthContext";
 import Profile from "@/pages/Profile";
-import ProfileApplicants from "@/pages/ProfileApplicants";
+import ProfileOther from "@/pages/ProfileOther";
 import { Route, Routes } from "react-router-dom";
 
 function App() {
@@ -26,10 +26,10 @@ function App() {
 				}
 			/>
 			<Route
-				path="/profile/:username"
+				path="/profile/:idOrUsername"
 				element={
 					<AuthProvider>
-						<ProfileApplicants />
+						<ProfileOther />
 					</AuthProvider>
 				}
 			/>
