@@ -1,3 +1,5 @@
+import L from "leaflet";
+
 function ClockSvg() {
 	return (
 		<svg
@@ -220,6 +222,30 @@ function PersonSvg() {
 	);
 }
 
+function UserSvg() {
+	return (
+		<svg
+			width="24"
+			height="24"
+			viewBox="0 0 24 24"
+			data-name="Flat Color"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				d="M21 20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 6 6 0 0 1 6-6h6a6 6 0 0 1 6 6m-9-8a5 5 0 1 0-5-5 5 5 0 0 0 5 5"
+				fill="#000"
+			/>
+		</svg>
+	);
+}
+
+const userIconLeaflet = L.icon({
+	iconUrl: "src/assets/svgs/user.svg",
+	iconSize: [24, 24],
+	iconAnchor: [24, 24],
+	popupAnchor: [-10, -40],
+});
+
 export {
 	ClockSvg,
 	DangerSvg,
@@ -232,4 +258,6 @@ export {
 	LogoSvg,
 	GroupSvg,
 	PersonSvg,
+	UserSvg,
+	userIconLeaflet,
 };

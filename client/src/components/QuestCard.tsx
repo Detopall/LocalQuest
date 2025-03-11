@@ -6,6 +6,7 @@ import {
 	WarningSvg,
 	DangerSvg,
 	CreateQuestSvg,
+	UserSvg,
 } from "@/components/svgs";
 import { MapPin } from "lucide-react";
 import { Card, CardBody, Button, Chip } from "@heroui/react";
@@ -75,6 +76,7 @@ function QuestCard({
 						<Button
 							color="warning"
 							variant="ghost"
+							startContent={<UserSvg />}
 							onPress={() => {
 								sessionStorage.setItem("otherUserId", quest.created_by);
 								window.open(`/profile/${quest.created_by}`, "_blank");

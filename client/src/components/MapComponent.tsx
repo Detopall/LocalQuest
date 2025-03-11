@@ -1,34 +1,66 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
 	MapContainer,
 	TileLayer,
 	Marker,
 	Popup,
 	Polyline,
+	useMap,
 } from "react-leaflet";
 import { LatLngTuple } from "leaflet";
 import { Button, Select, SelectItem } from "@heroui/react";
 import CustomPopup from "@/components/MapPopupComponent";
 import "leaflet/dist/leaflet.css";
-import MapOptionsModal from "./MapOptionsModal";
+import MapOptionsModal from "@/components/MapOptionsModal";
+import { userIconLeaflet } from "@/components/svgs";
 
-const MapComponent = () => {
+interface MapComponentProps {
+	user: any;
+}
+
+const MapComponent = ({ user }: MapComponentProps) => {
 	const [route, setRoute] = useState<LatLngTuple[]>([]);
 	const [distance, setDistance] = useState<number | null>(null);
 	const [duration, setDuration] = useState<number | null>(null);
+	const [locationEnabled, setLocationEnabled] = useState(false);
+	const [userLocation, setUserLocation] = useState<LatLngTuple>([0, 0]);
 	const [routeInstructions, setRouteInstructions] = useState<string[]>([]);
 	const [selectedTransport, setSelectedTransport] = useState("driving");
 	const [showDetails, setShowDetails] = useState(false);
 	const [isOpen, setIsOpen] = useState(false);
+	const [quests, setQuests] = useState<
+		{
+			id: number;
+			latitude: number;
+			longitude: number;
+			title: string;
+			description: string;
+			created_by: string;
+		}[]
+	>([]);
+
 	const handleOpen = () => setIsOpen(true);
 	const onClose = () => setIsOpen(false);
 
-	const userLocation: LatLngTuple = [51.505, -0.09];
-
-	const destinations = [
-		{ id: 1, position: [51.515, -0.1] as LatLngTuple, name: "Destination A" },
-		{ id: 2, position: [51.525, -0.08] as LatLngTuple, name: "Destination B" },
-	];
+	const handleLocationRequest = () => {
+		if (navigator.geolocation) {
+			console.log("Requesting location...");
+			navigator.geolocation.getCurrentPosition(
+				(position) => {
+					console.log("Location obtained:", position.coords);
+					setUserLocation([
+						position.coords.latitude,
+						position.coords.longitude,
+					]);
+					setLocationEnabled(true);
+				},
+				(error) => {
+					console.error("Error getting location:", error);
+					setLocationEnabled(false);
+				}
+			);
+		}
+	};
 
 	const getRoute = async (destination: LatLngTuple) => {
 		const url = `https://router.project-osrm.org/route/v1/${selectedTransport}/${userLocation[1]},${userLocation[0]};${destination[1]},${destination[0]}?overview=full&geometries=geojson&steps=true`;
@@ -52,9 +84,68 @@ const MapComponent = () => {
 		}
 	};
 
+	useEffect(() => {
+		const getLocation = () => {
+			if (navigator.geolocation) {
+				try {
+					navigator.geolocation.getCurrentPosition(
+						(position) => {
+							console.log("Location obtained:", position.coords);
+							setUserLocation([
+								position.coords.latitude,
+								position.coords.longitude,
+							]);
+							setLocationEnabled(true);
+						},
+						(error) => {
+							console.error("Error getting location:", error);
+							setLocationEnabled(false);
+						}
+					);
+				} catch (error) {
+					console.error("Error getting location:", error);
+					setLocationEnabled(false);
+				}
+			} else {
+				console.error("Geolocation is not supported by this browser.");
+				setLocationEnabled(false);
+			}
+		};
+
+		getLocation();
+	}, []);
+
+	useEffect(() => {
+		const fetchQuests = async () => {
+			try {
+				const response = await fetch("http://localhost:8000/api/quests", {
+					credentials: "include",
+				});
+				const data = await response.json();
+				setQuests(data.quests);
+			} catch (error) {
+				console.error("Error fetching quests:", error);
+			}
+		};
+
+		fetchQuests();
+	}, []);
+
+	const handleMarkerClick = (quest: any) => {
+		getRoute([quest.latitude, quest.longitude]);
+	};
+
+	const MapUpdater = ({ center }: { center: LatLngTuple }) => {
+		const map = useMap();
+		useEffect(() => {
+			map.setView(center);
+		}, [center, map]);
+		return null;
+	};
+
 	return (
-		<div className="flex">
-			<div className="relative flex-1 pl-4 w-[80vw] h-[80vh] overflow-hidden rounded-2xl shadow-lg gap-2">
+		<div className="flex flex-col h-screen">
+			<div className="flex-1 relative overflow-hidden rounded-2xl shadow-lg gap-2">
 				<div className="absolute top-5 right-5 transform -translate-x-1/2 z-10 space-y-4">
 					<Button
 						color="primary"
@@ -78,35 +169,42 @@ const MapComponent = () => {
 				</div>
 
 				<MapContainer
-					center={userLocation}
+					scrollWheelZoom={true}
+					center={userLocation as LatLngTuple}
 					zoom={13}
-					className="h-[80vh] w-[80vw] z-[1]"
+					className="h-full w-full z-[1]"
 				>
+					<MapUpdater center={userLocation} />
 					<TileLayer
 						url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 						attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 					/>
 
-					<Marker position={userLocation}>
-						<Popup>
-							<p className="text-lg font-bold text-blue-600">You are here</p>
-						</Popup>
+					{route.length > 0 && <Polyline positions={route} color="blue" />}
+
+					<Marker position={userLocation} icon={userIconLeaflet}>
+						<Popup>You are here</Popup>
 					</Marker>
 
-					{destinations.map((dest) => (
-						<Marker key={dest.id} position={dest.position}>
-							<Popup>
-								<CustomPopup
-									name={dest.name}
-									distance={distance}
-									duration={duration}
-									onRouteClick={() => getRoute(dest.position)}
-								/>
-							</Popup>
-						</Marker>
-					))}
-
-					{route.length > 0 && <Polyline positions={route} color="blue" />}
+					{quests
+						.filter((quest) => quest.created_by !== user._id)
+						.map((quest) => (
+							<Marker
+								key={quest.id}
+								position={[quest.latitude, quest.longitude] as LatLngTuple}
+								eventHandlers={{
+									click: () => handleMarkerClick(quest),
+								}}
+							>
+								<Popup>
+									<CustomPopup
+										quest={quest}
+										distance={distance}
+										duration={duration}
+									/>
+								</Popup>
+							</Marker>
+						))}
 				</MapContainer>
 				<MapOptionsModal
 					isOpen={isOpen}
@@ -114,6 +212,17 @@ const MapComponent = () => {
 					showDetails={showDetails}
 					routeInstructions={routeInstructions}
 				/>
+				{!locationEnabled && (
+					<div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 z-10 space-y-4">
+						<Button
+							color="primary"
+							onPress={handleLocationRequest}
+							className="px-6 py-3 rounded-lg text-white font-semibold shadow-lg hover:bg-primary-700 transition duration-300"
+						>
+							Enable Location
+						</Button>
+					</div>
+				)}
 			</div>
 		</div>
 	);

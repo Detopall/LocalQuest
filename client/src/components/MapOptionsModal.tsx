@@ -41,6 +41,22 @@ const getDirectionIcon = (maneuver: string) => {
 	}
 };
 
+const formatDuration = (duration: number) => {
+	if (duration >= 60) {
+		const minutes = Math.floor(duration / 60);
+		const seconds = Math.floor(duration % 60);
+		return `${minutes} min ${seconds} s`;
+	}
+	return `${duration.toFixed(0)} s`;
+};
+
+const formatDistance = (distance: number) => {
+	if (distance >= 500) {
+		return `${(distance / 1000).toFixed(2)} km`;
+	}
+	return `${distance.toFixed(0)} m`;
+};
+
 const MapOptionsModal = ({
 	isOpen,
 	onClose,
@@ -60,7 +76,6 @@ const MapOptionsModal = ({
 					Map Options
 				</ModalHeader>
 				<ModalBody className="flex flex-col items-center justify-center w-[600px] h-[600px] mb-5">
-
 					{showDetails && (
 						<Card className="mt-4 w-full max-h-80 overflow-y-auto shadow-lg">
 							<CardBody>
@@ -69,14 +84,9 @@ const MapOptionsModal = ({
 								</h3>
 								<p className="font-semibold mb-4 text-primary-600">
 									Distance:{" "}
-									{(
-										routeInstructions.routes[0].legs[0].distance / 1000
-									).toFixed(2)}{" "}
-									km - Duration:{" "}
-									{Math.round(
-										routeInstructions.routes[0].legs[0].duration / 60
-									)}{" "}
-									min
+									{formatDistance(routeInstructions.routes[0].legs[0].distance)}{" "}
+									- Duration:{" "}
+									{formatDuration(routeInstructions.routes[0].legs[0].duration)}
 								</p>
 
 								<ul className="space-y-4">
@@ -102,10 +112,10 @@ const MapOptionsModal = ({
 
 												<div className="flex space-x-4">
 													<span className="text-sm text-gray-500">
-														{step.distance.toFixed(0)} m
+														{formatDistance(step.distance)}
 													</span>
 													<span className="text-sm text-gray-500">
-														{step.duration.toFixed(0)} s
+														{formatDuration(step.duration)}
 													</span>
 												</div>
 											</li>
