@@ -10,6 +10,7 @@ LocalQuest is a web application that allows users to create, manage, and partici
   - [Frontend Setup](#frontend-setup)
 - [Linting and Formatting](#linting-and-formatting)
 - [Testing](#testing)
+- [Demo](#demo)
 - [License](#license)
 
 ## Project Structure
@@ -74,6 +75,12 @@ To run the backend tests, you can use `pytest`. Run these commands:
 cd server
 pytest
 ```
+
+## Demo
+
+You can view a demo video on YouTube using this link:
+
+<https://www.youtube.com/watch?v=JMaAIcA0ELw>
 
 ## License
 
