@@ -1,3 +1,4 @@
+import { addToast } from "@heroui/react";
 import {
 	createContext,
 	useContext,
@@ -35,6 +36,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			}
 		} catch (error) {
 			console.error("Auth Check Error:", error);
+			addToast({
+				title: "Error",
+				description: "An error occurred while checking your authentication.",
+				timeout: 3000,
+				shouldShowTimeoutProgress: true,
+				variant: "bordered",
+				radius: "md",
+				color: "danger",
+			});
 			setUser(null);
 		} finally {
 			setLoading(false);

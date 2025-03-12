@@ -9,6 +9,7 @@ import {
 	Input,
 	Checkbox,
 	DatePicker,
+	addToast
 } from "@heroui/react";
 import { now, getLocalTimeZone } from "@internationalized/date";
 import { useEffect, useState, useRef } from "react";
@@ -74,6 +75,15 @@ function CreateQuestModal({ isOpen, onClose, quest }: CreateQuestModalProps) {
 			} catch (error) {
 				console.error("Error fetching topics:", error);
 				setTopics([]);
+				addToast({
+					title: "Error",
+					description: "An error occurred while fetching topics.",
+					timeout: 3000,
+					shouldShowTimeoutProgress: true,
+					variant: "bordered",
+					radius: "md",
+					color: "danger",
+				});
 			}
 		}
 		getTopics();

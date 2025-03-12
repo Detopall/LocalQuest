@@ -8,7 +8,7 @@ import {
 	useMap,
 } from "react-leaflet";
 import { LatLngTuple } from "leaflet";
-import { Button, Select, SelectItem } from "@heroui/react";
+import { Button, Select, SelectItem, addToast } from "@heroui/react";
 import CustomPopup from "@/components/MapPopupComponent";
 import "leaflet/dist/leaflet.css";
 import MapOptionsModal from "@/components/MapOptionsModal";
@@ -57,6 +57,15 @@ const MapComponent = ({ user }: MapComponentProps) => {
 				(error) => {
 					console.error("Error getting location:", error);
 					setLocationEnabled(false);
+					addToast({
+						title: "Error",
+						description: "An error occurred while getting your location.",
+						timeout: 3000,
+						shouldShowTimeoutProgress: true,
+						variant: "bordered",
+						radius: "md",
+						color: "danger",
+					});
 				}
 			);
 		}
@@ -81,6 +90,15 @@ const MapComponent = ({ user }: MapComponentProps) => {
 			}
 		} catch (error) {
 			console.error("Error fetching route:", error);
+			addToast({
+				title: "Error",
+				description: "An error occurred while fetching your route.",
+				timeout: 3000,
+				shouldShowTimeoutProgress: true,
+				variant: "bordered",
+				radius: "md",
+				color: "danger",
+			});
 		}
 	};
 
@@ -105,6 +123,15 @@ const MapComponent = ({ user }: MapComponentProps) => {
 				} catch (error) {
 					console.error("Error getting location:", error);
 					setLocationEnabled(false);
+					addToast({
+						title: "Error",
+						description: "An error occurred while getting your location.",
+						timeout: 3000,
+						shouldShowTimeoutProgress: true,
+						variant: "bordered",
+						radius: "md",
+						color: "danger",
+					});
 				}
 			} else {
 				console.error("Geolocation is not supported by this browser.");
@@ -125,6 +152,15 @@ const MapComponent = ({ user }: MapComponentProps) => {
 				setQuests(data.quests);
 			} catch (error) {
 				console.error("Error fetching quests:", error);
+				addToast({
+					title: "Error",
+					description: "An error occurred while getting the quests.",
+					timeout: 3000,
+					shouldShowTimeoutProgress: true,
+					variant: "bordered",
+					radius: "md",
+					color: "danger",
+				});
 			}
 		};
 

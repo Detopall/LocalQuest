@@ -6,6 +6,7 @@ import {
 	ModalBody,
 	ModalFooter,
 	Button,
+	addToast
 } from "@heroui/react";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -38,6 +39,15 @@ const AuthModal = forwardRef<AuthModalRef>((_, ref) => {
 			window.location.href = "/home";
 		} catch (error) {
 			console.error("Auth Error:", error);
+			addToast({
+				title: "Error",
+				description: "An error occurred while authenticating.",
+				timeout: 3000,
+				shouldShowTimeoutProgress: true,
+				variant: "bordered",
+				radius: "md",
+				color: "danger",
+			});
 		}
 	};
 

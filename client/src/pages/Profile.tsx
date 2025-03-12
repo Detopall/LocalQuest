@@ -2,6 +2,7 @@ import { useAuth } from "@/components/AuthContext";
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import ProfileComponent from "@/components/ProfileComponent";
+import { addToast } from "@heroui/react";
 
 export interface Quest {
 	_id: string;
@@ -55,6 +56,15 @@ async function fetchLocation(lat: number, lon: number) {
 		return location;
 	} catch (error) {
 		console.error("Error fetching location:", error);
+		addToast({
+			title: "Error",
+			description: "An error occurred while fetching your location.",
+			timeout: 3000,
+			shouldShowTimeoutProgress: true,
+			variant: "bordered",
+			radius: "md",
+			color: "danger",
+		});
 		return "?";
 	}
 }
@@ -108,7 +118,18 @@ function Profile({ otherUserId }: ProfileProps) {
 					}
 				});
 			})
-			.catch((error) => console.error("Error fetching quests:", error));
+			.catch((error) => {
+				console.error("Error fetching quests:", error);
+				addToast({
+					title: "Error",
+					description: "An error occurred while trying to fetch the quests.",
+					timeout: 3000,
+					shouldShowTimeoutProgress: true,
+					variant: "bordered",
+					radius: "md",
+					color: "danger",
+				});
+			});
 	}, [user, otherUserId]);
 
 	useEffect(() => {

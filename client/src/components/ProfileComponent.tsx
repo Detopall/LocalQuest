@@ -7,6 +7,7 @@ import {
 	Avatar,
 	Button,
 	CardHeader,
+	addToast
 } from "@heroui/react";
 import { useEffect, useState } from "react";
 import ApplicantsModal from "@/components/ApplicantsModal";
@@ -109,6 +110,15 @@ function ProfileComponent({
 				window.location.reload();
 			} else {
 				console.error("Failed to delete quest");
+				addToast({
+					title: "Error",
+					description: "An error occurred while trying to delete the quest.",
+					timeout: 3000,
+					shouldShowTimeoutProgress: true,
+					variant: "bordered",
+					radius: "md",
+					color: "danger",
+				});
 			}
 		} catch (error) {
 			console.error("Error deleting quest:", error);
@@ -128,6 +138,15 @@ function ProfileComponent({
 				window.location.reload();
 			} else {
 				console.error("Failed to apply to quest");
+				addToast({
+					title: "Error",
+					description: "An error occurred while trying to apply to a quest.",
+					timeout: 3000,
+					shouldShowTimeoutProgress: true,
+					variant: "bordered",
+					radius: "md",
+					color: "danger",
+				});
 			}
 		} catch (error) {
 			console.error("Error applying to quest:", error);
