@@ -6,6 +6,13 @@ LocalQuest is a web application that allows users to create, manage, and partici
 
 - [Project Structure](#project-structure)
 - [Setup Instructions](#setup-instructions)
+  - [Docker](#docker)
+    - [Run](#run)
+    - [Stop](#stop)
+    - [Remove Container](#remove-container)
+    - [Remove Image](#remove-image)
+    - [Logs](#logs)
+    - [Help](#help)
   - [Backend Setup](#backend-setup)
   - [Frontend Setup](#frontend-setup)
 - [Linting and Formatting](#linting-and-formatting)
@@ -22,6 +29,87 @@ The project is organized into the following directories:
 
 ## Setup Instructions
 
+### Environment Variables
+
+Set up environment variables by creating a `.env` file in the `server` directory. Add the following variables:
+
+```bash
+SECRET_KEY="<your-secret-key>"
+MONGODB_USERNAME="<your-mongodb-username>"
+MONGODB_PASSWORD="<your-mongodb-password>"
+MONGODB_CLUSTER="<your-mongodb-cluster>"
+MONGODB_ENDPOINT="<your-mongodb-endpoint>"
+```
+
+You can also rename the `.env.example` file to `.env` to use the environment variables directly.
+
+### Docker
+
+Execute the following command:
+
+Make sure the bash script has the right permission by running `chmod u+x run.sh`
+
+#### Run
+
+```bash
+./run.sh
+```
+
+- Builds the Docker image (if not already built)
+- Runs the containers (using docker compose, if it isn't already running)
+- Opens the app in your default web browser at `http://localhost:5173/`
+
+#### Stop
+
+```bash
+./run.sh --stop
+```
+
+- Stops the running containers
+
+#### Remove Container
+
+```bash
+./run.sh --remove-container
+```
+
+- Stops the running containers (if not already stopped)
+- Removes the containers
+
+#### Remove Image
+
+```bash
+./run.sh --remove-all
+```
+
+- Stops the running containers (if not already stopped)
+- Removes the containers
+- Removes the Docker image
+
+#### Logs
+
+```bash
+./run.sh --logs
+```
+
+- Shows logs of the running containers
+
+#### Help
+
+```bash
+./run.sh --help
+```
+
+- Print the help message containing info about the available options
+
+To run it yourself using Docker, you can run the following commands:
+
+```bash
+docker compose -f docker-compose.yaml up -d --build
+```
+
+You can also individually run the server and client in the next two sections.
+
 ### Backend Setup
 
 Navigate to the `server` directory:
@@ -31,15 +119,6 @@ cd server
 python -m venv .venv
 source .venv/bin/activate # On Windows, use `.venv\Scripts\activate`
 pip install -r requirements.txt
-```
-
-Set up environment variables by creating a `.env` file in the `server` directory. Add the following variables:
-
-```bash
-MONGODB_USERNAME=<your-mongodb-username>
-MONGODB_PASSWORD=<your-mongodb-password>
-MONGODB_CLUSTER=<your-mongodb-cluster>
-MONGODB_ENDPOINT=<your-mongodb-endpoint>
 ```
 
 Start the server
