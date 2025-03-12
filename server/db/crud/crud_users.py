@@ -22,51 +22,42 @@ def get_users_db(db):
 
 def get_user_by_id_db(db, user_id: str):
     """
-    Get user by ID
+    Get user by ID or username
 
     Args:
-            user_id (str): User ID
+        user_id (str): User ID or username
 
     Returns:
-            User: User containing the created/applied quests
+        User: User containing the created/applied quests
     """
 
     users_collection = db["users"]
     quests_collection = db["quests"]
     topics_collection = db["topics"]
 
-    if validate_object_id(user_id) and ObjectId.is_valid(user_id):
+    # Check if the user_id is a valid ObjectId
+    if validate_object_id(user_id):
         user = users_collection.find_one({"_id": ObjectId(user_id)})
     else:
+        # Check if the user_id is a valid username
+        if not check_if_valid_user_id_or_name(user_id, users_collection):
+            return None
         user = users_collection.find_one({"username": user_id})
-        user_id = user.get("_id", None)
 
-    if not user or not user_id:
+    if not user:
         return None
 
     # Fetch created quests
-    created_quests = list(quests_collection.find({"created_by": ObjectId(user_id)}))
+    created_quests = list(quests_collection.find({"created_by": user["_id"]}))
     for quest in created_quests:
-        quest["topics"] = [
-            fetch_topic(topics_collection, topic_id)
-            for topic_id in quest.get("topics", [])
-        ]
-    quest["applicants"] = [
-        fetch_user(users_collection, applicant_id)
-        for applicant_id in quest.get("applicants", [])
-    ]
+        quest["topics"] = [fetch_topic(topics_collection, topic_id) for topic_id in quest.get("topics", [])]
+        quest["applicants"] = [fetch_user(users_collection, applicant_id) for applicant_id in quest.get("applicants", [])]
 
     # Fetch applied quests
-    applied_quests = list(quests_collection.find({"applicants": ObjectId(user_id)}))
+    applied_quests = list(quests_collection.find({"applicants": user["_id"]}))
     for quest in applied_quests:
-        quest["topics"] = [
-            fetch_topic(topics_collection, topic_id)
-            for topic_id in quest.get("topics", [])
-        ]
-    quest["applicants"] = [
-        fetch_user(users_collection, applicant_id)
-        for applicant_id in quest.get("applicants", [])
-    ]
+        quest["topics"] = [fetch_topic(topics_collection, topic_id) for topic_id in quest.get("topics", [])]
+        quest["applicants"] = [fetch_user(users_collection, applicant_id) for applicant_id in quest.get("applicants", [])]
 
     user["created_quests"] = [serialize_objectid(quest) for quest in created_quests]
     user["applied_quests"] = [serialize_objectid(quest) for quest in applied_quests]
@@ -74,17 +65,30 @@ def get_user_by_id_db(db, user_id: str):
     return serialize_objectid(user)
 
 
+def check_if_valid_user_id_or_name(user_id: str, users_collection) -> bool:
+    """
+    Checks if the given string is a valid user ID or username.
+
+    Args:
+        user_id (str): The string to validate
+        users_collection (Collection): The users collection
+
+    Returns:
+        bool: True if the string is a valid user ID or username, False otherwise
+    """
+    return bool(users_collection.find_one({"username": user_id}))
+
+
 def validate_object_id(id_string: str) -> bool:
     """
     Validates if the given string is a valid ObjectId.
 
     Args:
-            id_string (str): The string to validate
+        id_string (str): The string to validate
 
     Returns:
-            bool: True if the string is a valid ObjectId, False otherwise
+        bool: True if the string is a valid ObjectId, False otherwise
     """
-
     return bool(re.match(r"^[a-fA-F0-9]{24}$", str(id_string)))
 
 

@@ -57,7 +57,8 @@ async def authenticate_middleware(request: Request, call_next):
     """
     Middleware to authenticate users based on an auth token in cookies.
     """
-    if request.url.path.startswith("/auth"):
+    allowed_unauthenticated_paths = ["/auth", "/docs", "redoc", "/openapi.json"]
+    if request.url.path in allowed_unauthenticated_paths:
         return await call_next(request)
 
     auth_token = request.cookies.get("auth_token")

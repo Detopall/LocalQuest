@@ -91,15 +91,6 @@ def test_get_user_by_username(client, test_db):
     assert response.json()["user"]["_id"] == str(auth_user_id)
 
 
-def test_get_user_not_found(client, test_db):
-    generate_cookies_from_user(client, test_db)
-    non_existent_user = str(ObjectId())
-
-    response = client.get(f"/api/users/{non_existent_user}")
-    assert response.status_code == 404
-    assert response.json()["detail"] == "User not found"
-
-
 def test_get_user(client, test_db):
     generate_cookies_from_user(client, test_db)
     user_data = client.get("/api/me")
@@ -109,6 +100,15 @@ def test_get_user(client, test_db):
     assert response.status_code == 200
     assert response.json()["user"]["username"] == "authuser"
     assert response.json()["user"]["email"] == "auth@gmail.com"
+
+
+def test_get_user_not_found(client, test_db):
+    generate_cookies_from_user(client, test_db)
+    non_existent_user = str(ObjectId())
+
+    response = client.get(f"/api/users/{non_existent_user}")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "User not found"
 
 
 def test_delete_user_not_found(client, test_db):
