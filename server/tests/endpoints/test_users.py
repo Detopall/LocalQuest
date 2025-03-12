@@ -78,6 +78,15 @@ def test_get_users(client, test_db):
 	assert response.status_code == 200
 	assert len(response.json()["users"]) == 3  # Includes authenticated user
 
+def test_get_user_by_username(client, test_db):
+	generate_cookies_from_user(client, test_db)
+	user_data = client.get("/api/me").json()
+	auth_user_id = ObjectId(user_data["user"]["_id"])
+
+	response = client.get(f"/api/users/{user_data['user']['username']}")
+	assert response.status_code == 200
+	assert response.json()["user"]["_id"] == str(auth_user_id)
+
 
 def test_get_user_not_found(client, test_db):
 	generate_cookies_from_user(client, test_db)

@@ -107,6 +107,15 @@ function ProfileComponent({
 				}
 			);
 			if (response.ok) {
+				addToast({
+					title: "Successfully Deleted",
+					description: "You have successfully deleted your quest.",
+					timeout: 1000,
+					shouldShowTimeoutProgress: true,
+					variant: "bordered",
+					radius: "md",
+					color: "success",
+				});
 				window.location.reload();
 			} else {
 				console.error("Failed to delete quest");
@@ -135,6 +144,15 @@ function ProfileComponent({
 				}
 			);
 			if (response.ok) {
+				addToast({
+					title: "Successfully Applied",
+					description: "You have successfully applied this quest.",
+					timeout: 1000,
+					shouldShowTimeoutProgress: true,
+					variant: "bordered",
+					radius: "md",
+					color: "success",
+				});
 				window.location.reload();
 			} else {
 				console.error("Failed to apply to quest");

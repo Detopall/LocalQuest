@@ -9,7 +9,7 @@ import {
 	Input,
 	Checkbox,
 	DatePicker,
-	addToast
+	addToast,
 } from "@heroui/react";
 import { now, getLocalTimeZone } from "@internationalized/date";
 import { useEffect, useState, useRef } from "react";
@@ -126,13 +126,40 @@ function CreateQuestModal({ isOpen, onClose, quest }: CreateQuestModalProps) {
 
 			if (response.ok) {
 				console.log(`Quest ${quest ? "updated" : "created"} successfully!`);
+				addToast({
+					title: "Success",
+					description: `Quest ${quest ? "updated" : "created"} successfully!`,
+					timeout: 1000,
+					shouldShowTimeoutProgress: true,
+					variant: "bordered",
+					radius: "md",
+					color: "success",
+				});
 				onClose();
 				window.location.reload();
 			} else {
 				console.error(`Failed to ${quest ? "update" : "create"} quest`);
+				addToast({
+					title: "Error",
+					description: `An error occurred while trying to ${quest ? "update" : "create"} the quest`,
+					timeout: 3000,
+					shouldShowTimeoutProgress: true,
+					variant: "bordered",
+					radius: "md",
+					color: "danger",
+				});
 			}
 		} catch (error) {
 			console.error(`Error ${quest ? "updating" : "creating"} quest:`, error);
+			addToast({
+				title: "Error",
+				description: `An error occurred while trying to ${quest ? "update" : "create"} the quest`,
+				timeout: 3000,
+				shouldShowTimeoutProgress: true,
+				variant: "bordered",
+				radius: "md",
+				color: "danger",
+			});
 		}
 	}
 

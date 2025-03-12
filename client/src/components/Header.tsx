@@ -1,4 +1,4 @@
-import { Avatar, Button } from "@heroui/react";
+import { Avatar, Button, addToast } from "@heroui/react";
 import { useState } from "react";
 import CreateQuestModal from "@/components/CreateQuestModal";
 import { CreateQuestSvg, NotificationSvg, LogoutSvg } from "@/components/svgs";
@@ -18,6 +18,15 @@ function Header({ user, profilePage }: HeaderProps) {
 		await fetch("http://localhost:8000/auth/logout", {
 			method: "POST",
 			credentials: "include",
+		});
+		addToast({
+			title: "Logged Out",
+			description: "You have successfully logged out.",
+			timeout: 1000,
+			shouldShowTimeoutProgress: true,
+			variant: "bordered",
+			radius: "md",
+			color: "success",
 		});
 		window.location.href = "/";
 	}

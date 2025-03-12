@@ -1,3 +1,4 @@
+import re
 from bson import ObjectId
 from fastapi import Request
 from .serialize import serialize_objectid
@@ -34,9 +35,13 @@ def get_user_by_id_db(db, user_id: str):
 	quests_collection = db["quests"]
 	topics_collection = db["topics"]
 
-	user = users_collection.find_one({"_id": ObjectId(user_id)})
+	if validate_object_id(user_id) and ObjectId.is_valid(user_id):
+		user = users_collection.find_one({"_id": ObjectId(user_id)})
+	else:
+		user = users_collection.find_one({"username": user_id})
+		user_id = user.get("_id", None)
 
-	if not user:
+	if not user or not user_id:
 		return None
 
 	# Fetch created quests
@@ -55,6 +60,20 @@ def get_user_by_id_db(db, user_id: str):
 	user["applied_quests"] = [serialize_objectid(quest) for quest in applied_quests]
 
 	return serialize_objectid(user)
+
+def validate_object_id(id_string: str) -> bool:
+	"""
+	Validates if the given string is a valid ObjectId.
+
+	Args:
+		id_string (str): The string to validate
+
+	Returns:
+		bool: True if the string is a valid ObjectId, False otherwise
+	"""
+
+	return bool(re.match(r'^[a-fA-F0-9]{24}$', str(id_string)))
+
 
 def fetch_topic(topics_collection, topic_id):
 	"""Fetches topic details by ID."""

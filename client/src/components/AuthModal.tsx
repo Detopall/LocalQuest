@@ -35,6 +35,15 @@ const AuthModal = forwardRef<AuthModalRef>((_, ref) => {
 				body: JSON.stringify(formData),
 				credentials: "include",
 			});
+			addToast({
+				title: "Authenticated",
+				description: "You have successfully authenticated.",
+				timeout: 1000,
+				shouldShowTimeoutProgress: true,
+				variant: "bordered",
+				radius: "md",
+				color: "success",
+			});
 			setIsOpen(false);
 			window.location.href = "/home";
 		} catch (error) {
