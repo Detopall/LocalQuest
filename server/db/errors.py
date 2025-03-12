@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class DbError(Enum):
     USER_NOT_FOUND_ERROR = "User not found"
     EMAIL_ALREADY_EXISTS_ERROR = "Email already exists"

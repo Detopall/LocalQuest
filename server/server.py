@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from db.database import get_db_connection
@@ -13,11 +13,13 @@ import time
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_tables()
     yield
     logger.info("Shutting down application.")
+
 
 app = FastAPI(lifespan=lifespan)
 
@@ -29,6 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
     allow_credentials=True,
 )
+
 
 def authenticate_user(db, auth_token: str) -> str | None:
     """
@@ -48,6 +51,7 @@ def authenticate_user(db, auth_token: str) -> str | None:
     logger.info(f"Found cookie: {db_cookie}")
     return db_cookie["username"] if db_cookie else None
 
+
 @app.middleware("http")
 async def authenticate_middleware(request: Request, call_next):
     """
@@ -62,17 +66,24 @@ async def authenticate_middleware(request: Request, call_next):
         return JSONResponse({"error": "No authentication token found"}, status_code=401)
 
     try:
-        db = request.app.state.db if hasattr(request.app.state, "db") else get_db_connection()
+        db = (
+            request.app.state.db
+            if hasattr(request.app.state, "db")
+            else get_db_connection()
+        )
         username = authenticate_user(db, auth_token)
         logger.info(f"Authenticated user: {username}")
         if not username:
             logger.error("Invalid authentication token")
-            return JSONResponse({"error": "Invalid authentication token"}, status_code=401)
+            return JSONResponse(
+                {"error": "Invalid authentication token"}, status_code=401
+            )
     except Exception as e:
         logger.exception("Error occurred during authentication middleware:")
         return JSONResponse({"error": f"Internal server error: {e}"}, status_code=500)
 
     return await call_next(request)
+
 
 # Include API routes
 app.include_router(auth_router, prefix="/auth")

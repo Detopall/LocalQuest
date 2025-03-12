@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 from server import app
 from db.database import get_db_connection
 
+
 @pytest.fixture(scope="function")
 def test_db():
     client = mongomock.MongoClient()
