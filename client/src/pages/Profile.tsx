@@ -161,19 +161,20 @@ function Profile({ otherUserId }: ProfileProps) {
 	];
 
 	return (
-		<ProfileComponent
-			allTopics={allTopics}
-			user={user}
-			locations={locations}
-			statusFilter={statusFilter}
-			setStatusFilter={setStatusFilter}
-			setTopicFilter={setTopicFilter}
-			topicFilter={topicFilter}
-			filteredQuests={filteredQuests}
-			otherUserData={userData}
-			appliedQuests={appliedQuests}
-			createdQuests={createdQuests}
-		/>
+
+			<ProfileComponent
+				allTopics={allTopics}
+				user={user}
+				locations={locations}
+				statusFilter={statusFilter}
+				setStatusFilter={setStatusFilter}
+				setTopicFilter={setTopicFilter}
+				topicFilter={topicFilter}
+				filteredQuests={filteredQuests}
+				otherUserData={userData}
+				appliedQuests={appliedQuests}
+				createdQuests={createdQuests}
+			/>
 	);
 }
 

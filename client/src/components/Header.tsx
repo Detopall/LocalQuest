@@ -1,7 +1,7 @@
 import { Avatar, Button, addToast } from "@heroui/react";
 import { useState } from "react";
 import CreateQuestModal from "@/components/CreateQuestModal";
-import { CreateQuestSvg, NotificationSvg, LogoutSvg } from "@/components/svgs";
+import { CreateQuestSvg, LogoutSvg } from "@/components/svgs";
 
 interface HeaderProps {
 	user: any;
@@ -71,14 +71,6 @@ function Header({ user, profilePage }: HeaderProps) {
 						onPress={handleOpen}
 					>
 						<CreateQuestSvg />
-					</Button>
-					<Button
-						isIconOnly
-						aria-label="Notification"
-						color="secondary"
-						variant="ghost"
-					>
-						<NotificationSvg />
 					</Button>
 					<Button
 						isIconOnly

@@ -7,6 +7,7 @@ import {
 	DangerSvg,
 	CreateQuestSvg,
 	UserSvg,
+	CloseSvg,
 } from "@/components/svgs";
 import { MapPin } from "lucide-react";
 import { Card, CardBody, Button, Chip } from "@heroui/react";
@@ -14,6 +15,7 @@ import { Card, CardBody, Button, Chip } from "@heroui/react";
 interface QuestCardProps {
 	quest: any;
 	handleShowApplicants: (quest: any) => void;
+	handleCloseQuest: (quest: any) => void;
 	handleEditQuest: (quest: any) => void;
 	handleDeleteQuest: (quest: any) => void;
 	handleApplyQuest: (quest: any) => void;
@@ -25,6 +27,7 @@ function QuestCard({
 	quest,
 	handleShowApplicants,
 	handleEditQuest,
+	handleCloseQuest,
 	handleApplyQuest,
 	handleDeleteQuest,
 	location,
@@ -67,57 +70,57 @@ function QuestCard({
 	return (
 		<Card
 			key={quest._id}
-			className="overflow-hidden hover:shadow-md transition-shadow w-3/4"
+			className={`overflow-hidden hover:shadow-md transition-shadow w-3/4 ${
+				quest.status === "closed" ? "bg-red-100" : ""
+			}`}
 		>
 			<CardBody className="p-4">
 				<div className="flex justify-between items-start mb-2">
 					<h3 className="text-lg font-semibold">{quest.title}</h3>
-					{quest.created_by !== user._id ? (
-						<Button
-							color="warning"
-							variant="ghost"
-							startContent={<UserSvg />}
-							onPress={() => {
-								sessionStorage.setItem("otherUserId", quest.created_by);
-								window.open(`/profile/${quest.created_by}`, "_blank");
-							}}
-						>
-							Creator Profile
-						</Button>
-					) : null}
 					<div className="flex flex-wrap gap-2">
 						<Button
 							isIconOnly
 							aria-label="Applicants"
-							color="secondary"
+							color="primary"
 							onPress={() => handleShowApplicants(quest)}
 						>
 							<GroupSvg />
 						</Button>
 						{quest.created_by === user._id ? (
 							<>
+								{quest.status === "open" ? (
+									<>
+										<Button
+											isIconOnly
+											aria-label="Edit"
+											color="secondary"
+											onPress={() => handleEditQuest(quest)}
+										>
+											<EditSvg />
+										</Button>
+										<Button
+											isIconOnly
+											aria-label="Close"
+											color="warning"
+											onPress={() => handleCloseQuest(quest)}
+										>
+											<CloseSvg />
+										</Button>
+									</>
+								) : null}
 								<Button
 									isIconOnly
-									aria-label="Edit"
-									color="warning"
-									onPress={() => handleEditQuest(quest)}
-								>
-									<EditSvg />
-								</Button>
-								<Button
-									isIconOnly
-									aria-label="Edit"
+									aria-label="Delete"
 									color="danger"
 									onPress={() => handleDeleteQuest(quest)}
 								>
 									<TrashSvg />
 								</Button>
 							</>
-						) : isUserNotApplied ? (
+						) : (isUserNotApplied && quest.status === "open") ? (
 							<Button
 								isIconOnly
 								aria-label="Apply"
-								color="primary"
 								onPress={() => handleApplyQuest(quest)}
 							>
 								<CreateQuestSvg />
@@ -151,6 +154,20 @@ function QuestCard({
 						</span>
 					</div>
 					<div className="flex items-center gap-5">
+						{quest.created_by !== user._id ? (
+							<Button
+								color="warning"
+								variant="shadow"
+								size="sm"
+								startContent={<UserSvg />}
+								onPress={() => {
+									sessionStorage.setItem("otherUserId", quest.created_by);
+									window.open(`/profile/${quest.created_by}`, "_blank");
+								}}
+							>
+								Creator Profile
+							</Button>
+						) : null}
 						{getDeadlineChip(quest.deadline)}
 						<Chip
 							variant="shadow"

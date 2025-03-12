@@ -1,3 +1,9 @@
 fastapi
 uvicorn
 requests
+pydantic
+mongoose
+mongomock
+bcrypt
+passlib
+cryptography

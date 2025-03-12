@@ -208,7 +208,7 @@ def test_get_quest_by_id(client, test_db):
 		"status": "open"
 	})
 
-	response = client.get(f"/api/quests/{str(quest_id)}")
+	response = client.get(f"/api/quests/{quest_id}")
 
 	assert response.status_code == 200
 	assert response.json()["quest"]["title"] == "Test Quest"
@@ -298,7 +298,7 @@ def test_update_quest_not_creator(client, test_db):
 		"deadline": (datetime.now() + timedelta(days=30)).isoformat()
 	}
 
-	response = client.put(f"/api/quests/{str(quest_id)}", json=update_data)
+	response = client.put(f"/api/quests/{quest_id}", json=update_data)
 
 	# The update should fail because the user is not the creator
 	assert response.status_code == 404
@@ -351,7 +351,7 @@ def test_update_quest(client, test_db):
 		"deadline": new_deadline
 	}
 
-	response = client.put(f"/api/quests/{str(quest_id)}", json=update_data)
+	response = client.put(f"/api/quests/{quest_id}", json=update_data)
 
 	assert response.status_code == 200
 	assert response.json()["quest"]["title"] == "Updated Quest"
@@ -413,7 +413,7 @@ def test_delete_quest(client, test_db):
 		"status": "open"
 	})
 
-	response = client.delete(f"/api/quests/{str(quest_id)}")
+	response = client.delete(f"/api/quests/{quest_id}")
 
 	print(response.json())
 
@@ -608,7 +608,7 @@ def test_apply_to_quest_creator(client, test_db):
 		"status": "open"
 	})
 
-	response = client.post(f"/api/quests/{str(quest_id)}/apply")
+	response = client.post(f"/api/quests/{quest_id}/apply")
 
 	# Should fail because user is the creator
 	assert response.status_code == 404
@@ -646,7 +646,7 @@ def test_apply_to_quest(client, test_db):
 		"status": "open"
 	})
 
-	response = client.post(f"/api/quests/{str(quest_id)}/apply")
+	response = client.post(f"/api/quests/{quest_id}/apply")
 
 	assert response.status_code == 200
 	assert response.json()["message"] == "Applied to quest"
@@ -687,8 +687,104 @@ def test_apply_to_quest_already_applied(client, test_db):
 		"status": "open"
 	})
 
-	response = client.post(f"/api/quests/{str(quest_id)}/apply")
+	response = client.post(f"/api/quests/{quest_id}/apply")
 
 	# Should fail because user already applied
 	assert response.status_code == 404
 	assert "already an applicant" in response.json()["detail"]
+
+def test_close_quest_no_auth(client, test_db):
+	"""
+	Test close quest without authentication
+	"""
+	quest_id = str(ObjectId())
+	response = client.post(f"/api/quests/{quest_id}/close")
+	assert response.status_code == 401
+
+
+def test_close_quest_not_found(client, test_db):
+	"""
+	Test close quest with non-existent ID
+	"""
+	generate_cookies_from_user(client, test_db)
+	non_existent_id = str(ObjectId())
+
+	response = client.post(f"/api/quests/{non_existent_id}/close")
+	assert response.status_code == 404
+	assert response.json()["detail"] == "Quest not found"
+
+
+def test_close_quest_not_creator(client, test_db):
+	"""
+	Test close quest when user is not the creator
+	"""
+	generate_cookies_from_user(client, test_db)
+	user_data = client.get("/api/me").json()
+	user_id = ObjectId(user_data["user"]["_id"])
+
+	# Create a topic
+	topic_id = ObjectId()
+	test_db["topics"].insert_one({"_id": topic_id, "name": "test"})
+
+	# Create another user as the creator
+	another_user_id = ObjectId()
+
+	# Insert a test quest with another user as creator
+	quest_id = ObjectId()
+	deadline = datetime.now() + timedelta(days=30)
+	test_db["quests"].insert_one({
+		"_id": quest_id,
+		"title": "Test Quest",
+		"description": "Test description",
+		"topics": [topic_id],
+		"longitude": 10.0,
+		"latitude": 20.0,
+		"deadline": deadline,
+		"created_by": another_user_id,
+		"applicants": [],
+		"status": "open"
+	})
+
+	response = client.post(f"/api/quests/{quest_id}/close")
+
+	# The close should fail because the user is not the creator
+	assert response.status_code == 404
+	assert "User is not the creator of this quest" in response.json()["detail"]
+
+
+def test_close_quest(client, test_db):
+	"""
+	Test close quest with valid ID
+	"""
+	generate_cookies_from_user(client, test_db)
+	user_data = client.get("/api/me").json()
+	user_id = ObjectId(user_data["user"]["_id"])
+
+	# Create a topic
+	topic_id = ObjectId()
+	test_db["topics"].insert_one({"_id": topic_id, "name": "test"})
+
+	# Insert a test quest with the current user as creator
+	quest_id = ObjectId()
+	deadline = datetime.now() + timedelta(days=30)
+	test_db["quests"].insert_one({
+		"_id": quest_id,
+		"title": "Test Quest",
+		"description": "Test description",
+		"topics": [topic_id],
+		"longitude": 10.0,
+		"latitude": 20.0,
+		"deadline": deadline,
+		"created_by": user_id,
+		"applicants": [],
+		"status": "open"
+	})
+
+	response = client.post(f"/api/quests/{quest_id}/close")
+
+	assert response.status_code == 200
+	assert response.json()["message"] == "Quest closed"
+
+	# Verify quest status was updated in database
+	db_quest = test_db["quests"].find_one({"_id": quest_id})
+	assert db_quest["status"] == "closed"

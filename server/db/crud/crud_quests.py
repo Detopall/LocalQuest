@@ -280,3 +280,33 @@ def add_applicant_to_quest_db(db, quest_id: str, request: Request):
 	updated_quest = quests_collection.find_one({"_id": ObjectId(quest_id)})
 
 	return serialize_objectid(updated_quest), ""
+
+def close_quest_db(db, quest_id: str, request: Request):
+	"""
+	Close a quest
+
+	Args:
+		quest_id (str): Quest id
+		request (Request): Request object
+
+	Returns:
+		Quest: Updated quest
+	"""
+
+	quests_collection = db["quests"]
+	quest = quests_collection.find_one({"_id": ObjectId(quest_id)})
+
+	if not quest:
+		return None, "Quest not found"
+
+	# check if the user is the creator of the quest
+	user = get_user_from_cookie(request, db)
+	user_is_creator_msg = check_user_is_creator(quest, user)
+	if not user_is_creator_msg:
+		return None, "User is not the creator of this quest"
+
+	quests_collection.update_one({"_id": ObjectId(quest_id)}, {"$set": {"status": "closed"}})
+
+	updated_quest = quests_collection.find_one({"_id": ObjectId(quest_id)})
+
+	return serialize_objectid(updated_quest), ""

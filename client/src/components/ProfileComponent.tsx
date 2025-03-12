@@ -4,10 +4,10 @@ import {
 	CardBody,
 	Select,
 	SelectItem,
-	Avatar,
 	Button,
 	CardHeader,
-	addToast
+	addToast,
+	Skeleton,
 } from "@heroui/react";
 import { useEffect, useState } from "react";
 import ApplicantsModal from "@/components/ApplicantsModal";
@@ -61,6 +61,7 @@ function ProfileComponent({
 		null
 	);
 	const [applicantsQuest, setApplicantsQuest] = useState<Quest | null>(null);
+	const [loading, setLoading] = useState(true);
 
 	const displayedUser = otherUserData || user;
 
@@ -97,10 +98,10 @@ function ProfileComponent({
 		return statusMatch && topicMatch;
 	});
 
-	async function handleDeleteQuest(questId: number) {
+	async function handleDeleteQuest(quest: any) {
 		try {
 			const response = await fetch(
-				`http://localhost:8000/api/quests/${questId}`,
+				`http://localhost:8000/api/quests/${quest._id}`,
 				{
 					method: "DELETE",
 					credentials: "include",
@@ -171,6 +172,43 @@ function ProfileComponent({
 		}
 	}
 
+	async function handleCloseQuest(quest: any) {
+		try {
+			const response = await fetch(
+				`http://localhost:8000/api/quests/${quest._id}/close`,
+				{
+					method: "POST",
+					credentials: "include",
+				}
+			);
+			if (response.ok) {
+				addToast({
+					title: "Successfully Closed",
+					description: "You have successfully closed your quest.",
+					timeout: 1000,
+					shouldShowTimeoutProgress: true,
+					variant: "bordered",
+					radius: "md",
+					color: "success",
+				});
+				window.location.reload();
+			} else {
+				console.error("Failed to close quest");
+				addToast({
+					title: "Error",
+					description: "An error occurred while trying to close the quest.",
+					timeout: 3000,
+					shouldShowTimeoutProgress: true,
+					variant: "bordered",
+					radius: "md",
+					color: "danger",
+				});
+			}
+		} catch (error) {
+			console.error("Error closing quest:", error);
+		}
+	}
+
 	function handleEditQuest(quest: ModifiedQuest) {
 		setSelectedQuest(quest);
 		setPendingOpen(true);
@@ -188,27 +226,45 @@ function ProfileComponent({
 		}
 	}, [pendingOpen, selectedQuest]);
 
+	useEffect(() => {
+		if (otherUserData) {
+			setLoading(true);
+		}
+	}, [otherUserData]);
+
+	useEffect(() => {
+		if (!otherUserData && user) {
+			setLoading(false);
+		}
+	}, [user, otherUserData]);
+
 	return (
 		<div className="min-h-screen bg-slate-50">
 			<Header user={displayedUser} profilePage={true} />
 
 			<main className="container mx-auto px-4 py-6">
-				<Card className="mb-6 shadow-md">
-					<CardBody className="p-6 flex text-center items-center gap-4">
-						<Avatar
-							className="h-15 w-15"
-							src="https://i.pravatar.cc/150?u=a04258114e29026708c"
-						/>
-						<div>
-							<h1 className="text-2xl font-bold">
-								{displayedUser.username || "You"}
-							</h1>
-							<p className="text-gray-600">
-								{displayedUser.email || "No email provided"}
-							</p>
-						</div>
-					</CardBody>
-				</Card>
+				<Skeleton isLoaded={loading} className="rounded-lg mb-5">
+					<Card className="mb-6 shadow-md">
+						<CardBody className="p-6 flex text-center items-center gap-4">
+							<div className="flex-shrink-0">
+								<img
+									src="/avatar.png"
+									alt="User Avatar"
+									className="w-10 h-10 rounded-full"
+								/>
+							</div>
+
+							<div>
+								<h1 className="text-2xl font-bold">
+									{displayedUser.username || "You"}
+								</h1>
+								<p className="text-gray-600">
+									{displayedUser.email || "No email provided"}
+								</p>
+							</div>
+						</CardBody>
+					</Card>
+				</Skeleton>
 
 				<Card className="mb-6 shadow-sm max-w-xl mx-auto">
 					<CardHeader className="pb-3">
@@ -269,6 +325,7 @@ function ProfileComponent({
 								<QuestCard
 									key={quest._id}
 									quest={quest}
+									handleCloseQuest={handleCloseQuest}
 									handleShowApplicants={handleShowApplicants}
 									handleEditQuest={handleEditQuest}
 									handleDeleteQuest={handleDeleteQuest}
@@ -291,6 +348,7 @@ function ProfileComponent({
 								<QuestCard
 									key={quest._id}
 									quest={quest}
+									handleCloseQuest={handleCloseQuest}
 									handleApplyQuest={handleApplyQuest}
 									user={user}
 									handleShowApplicants={handleShowApplicants}

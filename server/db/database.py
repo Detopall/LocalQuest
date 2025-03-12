@@ -94,20 +94,6 @@ def create_quest_table(db):
     quests.create_index("topics")
     quests.create_index([("longitude", 1), ("latitude", 1)])
 
-def create_quest_candidates_table(db):
-    db.create_collection("quest_candidates", validator={
-        "$jsonSchema": {
-            "bsonType": "object",
-            "required": ["quest_id", "user_id"],
-            "properties": {
-                "quest_id": {"bsonType": "objectId"},
-                "user_id": {"bsonType": "objectId"}
-            }
-        }
-    })
-    quest_candidates = db["quest_candidates"]
-    quest_candidates.create_index("quest_id")
-    quest_candidates.create_index("user_id")
 
 def create_tables():
     db = get_db_connection()
@@ -117,8 +103,7 @@ def create_tables():
         "users": create_users_table,
         "cookies": create_cookies_table,
         "topics": create_topics_table,
-        "quests": create_quest_table,
-        "quest_candidates": create_quest_candidates_table
+        "quests": create_quest_table
     }
 
     for collection_name, create_function in tables.items():

@@ -93,3 +93,10 @@ async def apply_to_quest(quest_id: str, request: Request, db: MongoClient = Depe
     if not quest:
         raise HTTPException(status_code=404, detail=str(err))
     return JSONResponse(status_code=200, content={"message": "Applied to quest", "data": quest})
+
+@router.post("/{quest_id}/close")
+async def close_quest(quest_id: str, db: MongoClient = Depends(get_db_connection), request: Request = None):
+    quest, err = crud_quests.close_quest_db(db=db, quest_id=quest_id, request=request)
+    if not quest:
+        raise HTTPException(status_code=404, detail=str(err))
+    return JSONResponse(status_code=200, content={"message": "Quest closed", "data": quest})
